@@ -10,7 +10,7 @@ import {
   ipcMain,
   BrowserWindow
 } from "electron";
-
+import { fork, type ChildProcess } from "node:child_process";
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -48,6 +48,7 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
+let worker: ChildProcess | null = null;
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.mjs");
 const url = process.env.VITE_DEV_SERVER_URL;
@@ -60,7 +61,56 @@ function createMenu(label = "进入全屏幕") {
   );
   Menu.setApplicationMenu(menu);
 }
+import type { WorkerMessage } from "../types/worker";
+function startWorker() {
+  const workerPath = join(__dirname, "worker.js");
 
+  console.log("Worker 路径:", workerPath);
+
+  worker = fork(workerPath);
+
+  // 接收 Worker 消息
+  worker.on("message", message => {
+    const msg = message as WorkerMessage;
+
+    switch (msg.type) {
+      case "data":
+        console.log("实时数据", msg.data);
+
+        win?.webContents.send("modbus-data", msg.data);
+
+        break;
+
+      case "alarm":
+        console.log("告警", msg.data);
+
+        break;
+
+      case "error":
+        console.error(msg.message);
+
+        break;
+    }
+  });
+
+  // Worker 错误
+  worker.on("error", error => {
+    console.error("Worker 错误:", error);
+  });
+
+  // Worker 退出
+  worker.on("exit", (code, signal) => {
+    console.log(`Worker 退出 code=${code}, signal=${signal}`);
+
+    worker = null;
+  });
+  worker.on("close", code => {
+    console.log("worker close", code);
+  });
+
+  // 告诉 Worker 开始工作
+  worker.send("start");
+}
 async function createWindow() {
   win = new BrowserWindow({
     width: 1024,
@@ -114,7 +164,10 @@ async function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  await createWindow();
+  startWorker();
+});
 
 app.on("window-all-closed", () => {
   win = null;

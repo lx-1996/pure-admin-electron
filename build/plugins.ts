@@ -75,7 +75,10 @@ export function getPluginsList(
           electron({
             main: {
               // Shortcut of `build.lib.entry`
-              entry: "electron/main/index.ts",
+              entry: [
+                "electron/main/index.ts",
+                "electron/main/worker/worker.ts"
+              ],
               onstart({ startup }) {
                 if (process.env.VSCODE_DEBUG) {
                   console.log(

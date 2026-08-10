@@ -16,6 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "allowJs": false,
     "resolveJsonModule": true,
     "lib": [
@@ -46,7 +47,8 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "types/*.d.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "electron/**/*.d.ts"
   ],
   "exclude": [
     "dist",
