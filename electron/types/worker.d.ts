@@ -1,14 +1,10 @@
-﻿export interface WorkerDataMessage {
+﻿interface WorkerDataMessage {
   type: "data";
 
-  data: {
-    voltage: number;
-    current: number;
-    soc: number;
-  };
+  data: unknown;
 }
 
-export interface WorkerAlarmMessage {
+interface WorkerAlarmMessage {
   type: "alarm";
 
   data: {
@@ -17,13 +13,13 @@ export interface WorkerAlarmMessage {
   };
 }
 
-export interface WorkerErrorMessage {
+interface WorkerErrorMessage {
   type: "error";
 
   message: string;
 }
 
-export type WorkerMessage =
+type WorkerMessage =
   | WorkerDataMessage
   | WorkerAlarmMessage
   | WorkerErrorMessage;

@@ -1,25 +1,36 @@
 import { ipcRenderer, contextBridge } from "electron";
 
 // --------- Expose some API to the Renderer process ---------
+// contextBridge 对函数不保证跨桥引用恒等性：渲染进程两次传入的
+// “同一个 listener”，在 preload 侧可能是两个不同的代理对象，
+// 用 listener 当 key 做 === 比对也不可靠。
+// 因此这里改用自增 listenerId（原始类型，跨桥为值拷贝，绝对稳定）：
+// on 返回一个 listenerId，渲染进程保存该 id，off 时用 id 精确注销。
+const listenerMap = new Map<
+  number,
+  { channel: string; wrapper: (...args: any[]) => void }
+>();
+let nextListenerId = 1;
+
 contextBridge.exposeInMainWorld("ipcRenderer", {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args;
-    return ipcRenderer.on(channel, (event, ...args) =>
-      listener(event, ...args)
-    );
+  on(channel: string, listener: (...args: any[]) => void) {
+    const listenerId = nextListenerId++;
+    const wrapper = (...args: any[]) => listener(...args);
+    listenerMap.set(listenerId, { channel, wrapper });
+    ipcRenderer.on(channel, wrapper);
+    return listenerId;
   },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args;
-    return ipcRenderer.off(channel, ...omit);
+  off(listenerId: number) {
+    const record = listenerMap.get(listenerId);
+    if (record) {
+      ipcRenderer.removeListener(record.channel, record.wrapper);
+      listenerMap.delete(listenerId);
+    }
   },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args;
-    return ipcRenderer.send(channel, ...omit);
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args;
-    return ipcRenderer.invoke(channel, ...omit);
-  }
+  send: ipcRenderer.send.bind(ipcRenderer),
+  invoke: ipcRenderer.invoke.bind(ipcRenderer),
+  listenerCount: ipcRenderer.listenerCount.bind(ipcRenderer),
+  listeners: ipcRenderer.listeners.bind(ipcRenderer)
 
   // You can expose other APTs you need here.
   // ...

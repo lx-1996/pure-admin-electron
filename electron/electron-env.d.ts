@@ -11,12 +11,16 @@ declare namespace NodeJS {
 }
 interface Window {
   ipcRenderer: {
-    on(channel: string, listener: (event: any, ...args: any[]) => void): void;
+    on(channel: string, listener: (event: any, ...args: any[]) => void): number;
 
-    off(channel: string, listener: any): void;
+    off(listenerId: number): void;
 
     send(channel: string, ...args: any[]): void;
 
     invoke(channel: string, ...args: any[]): Promise<any>;
+
+    listenerCount(channel: string): number;
+
+    listeners(channel: string): Function[];
   };
 }

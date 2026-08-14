@@ -1,38 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onBeforeMount, onBeforeUnmount } from "vue";
 defineOptions({
   name: "Welcome"
 });
 const data = ref();
+let listenerId: number | null = null;
 
 function onData(_event: any, value: any) {
-  console.log("收到数据:", value);
-
+  console.log(value);
   data.value = value;
 }
 
-onMounted(() => {
-  window.ipcRenderer.on("modbus-data", onData);
+onBeforeMount(() => {
+  listenerId = window.ipcRenderer.on("modbus-data", onData);
 });
 
-onUnmounted(() => {
-  window.ipcRenderer.off("modbus-data", onData);
+onBeforeUnmount(() => {
+  if (listenerId !== null) {
+    window.ipcRenderer.off(listenerId);
+    listenerId = null;
+  }
 });
 </script>
 
 <template>
-  <div v-if="data">
-    电压:
-    {{ data.voltage }}
-
-    <br />
-
-    电流:
-    {{ data.current }}
-
-    <br />
-
-    SOC:
-    {{ data.soc }}
-  </div>
+  <div v-if="data">{{ data }}</div>
 </template>

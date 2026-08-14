@@ -1,16 +1,10 @@
 import { release } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
-import {
-  type MenuItem,
-  type MenuItemConstructorOptions,
-  app,
-  Menu,
-  shell,
-  ipcMain,
-  BrowserWindow
-} from "electron";
-import { fork, type ChildProcess } from "node:child_process";
+import { app, shell, BrowserWindow } from "electron";
+import { createMenu } from "./menu";
+import { initRendererHandler } from "./rendererHandler";
+import { startWorker } from "./workerHandler";
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -28,8 +22,6 @@ process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
 process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
   ? join(process.env.DIST_ELECTRON, "../public")
   : process.env.DIST;
-// 是否为开发环境
-const isDev = process.env["NODE_ENV"] === "development";
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
@@ -48,69 +40,10 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
-let worker: ChildProcess | null = null;
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.mjs");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
-
-// 创建菜单
-function createMenu(label = "进入全屏幕") {
-  const menu = Menu.buildFromTemplate(
-    appMenu(label) as (MenuItemConstructorOptions | MenuItem)[]
-  );
-  Menu.setApplicationMenu(menu);
-}
-import type { WorkerMessage } from "../types/worker";
-function startWorker() {
-  const workerPath = join(__dirname, "worker.js");
-
-  console.log("Worker 路径:", workerPath);
-
-  worker = fork(workerPath);
-
-  // 接收 Worker 消息
-  worker.on("message", message => {
-    const msg = message as WorkerMessage;
-
-    switch (msg.type) {
-      case "data":
-        console.log("实时数据", msg.data);
-
-        win?.webContents.send("modbus-data", msg.data);
-
-        break;
-
-      case "alarm":
-        console.log("告警", msg.data);
-
-        break;
-
-      case "error":
-        console.error(msg.message);
-
-        break;
-    }
-  });
-
-  // Worker 错误
-  worker.on("error", error => {
-    console.error("Worker 错误:", error);
-  });
-
-  // Worker 退出
-  worker.on("exit", (code, signal) => {
-    console.log(`Worker 退出 code=${code}, signal=${signal}`);
-
-    worker = null;
-  });
-  worker.on("close", code => {
-    console.log("worker close", code);
-  });
-
-  // 告诉 Worker 开始工作
-  worker.send("start");
-}
 async function createWindow() {
   win = new BrowserWindow({
     width: 1024,
@@ -165,8 +98,12 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  initRendererHandler({ preload, url, indexHtml });
   await createWindow();
-  startWorker();
+  startWorker(
+    (channel, data) => win?.webContents.send(channel, data),
+    __dirname
+  );
 });
 
 app.on("window-all-closed", () => {
@@ -188,73 +125,5 @@ app.on("activate", () => {
     allWindows[0].focus();
   } else {
     createWindow();
-  }
-});
-
-// 菜单栏 https://www.electronjs.org/zh/docs/latest/api/menu-item#%E8%8F%9C%E5%8D%95%E9%A1%B9
-const appMenu = (fullscreenLabel: string) => {
-  const menuItems = [
-    { label: "关于", role: "about" },
-    { label: "开发者工具", role: "toggleDevTools" },
-    { label: "强制刷新", role: "forcereload" },
-    { label: "退出", role: "quit" }
-  ];
-  // 生产环境删除开发者工具菜单
-  if (!isDev) menuItems.splice(1, 1);
-  const template = [
-    {
-      label: app.name,
-      submenu: menuItems
-    },
-    {
-      label: "编辑",
-      submenu: [
-        { label: "撤销", role: "undo" },
-        {
-          label: "重做",
-          role: "redo"
-        },
-        { type: "separator" },
-        { label: "剪切", role: "cut" },
-        { label: "复制", role: "copy" },
-        { label: "粘贴", role: "paste" },
-        { label: "删除", role: "delete" },
-        { label: "全选", role: "selectAll" }
-      ]
-    },
-    {
-      label: "显示",
-      submenu: [
-        { label: "加大", role: "zoomin" },
-        {
-          label: "默认大小",
-          role: "resetzoom"
-        },
-        { label: "缩小", role: "zoomout" },
-        { type: "separator" },
-        {
-          label: fullscreenLabel,
-          role: "togglefullscreen"
-        }
-      ]
-    }
-  ];
-  return template;
-};
-
-// New window example arg: new windows url
-ipcMain.handle("open-win", (_, arg) => {
-  const childWindow = new BrowserWindow({
-    webPreferences: {
-      preload,
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  if (process.env.VITE_DEV_SERVER_URL) {
-    childWindow.loadURL(`${url}#${arg}`);
-  } else {
-    childWindow.loadFile(indexHtml, { hash: arg });
   }
 });
