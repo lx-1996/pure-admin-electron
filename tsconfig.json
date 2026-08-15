@@ -49,7 +49,7 @@
     "types/*.d.ts",
     "vite.config.ts",
     "electron/**/*.d.ts"
-  ],
+, "electron/main/types/worker.ts"  ],
   "exclude": [
     "dist",
     "**/*.js",

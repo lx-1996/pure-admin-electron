@@ -6,7 +6,7 @@
 } from "electron";
 // 菜单栏 https://www.electronjs.org/zh/docs/latest/api/menu-item#%E8%8F%9C%E5%8D%95%E9%A1%B9
 // 是否为开发环境
-const isDev = process.env["NODE_ENV"] === "development";
+//const isDev = process.env["NODE_ENV"] === "development";
 const appMenu = (fullscreenLabel: string) => {
   const menuItems = [
     { label: "关于", role: "about" },
@@ -15,7 +15,7 @@ const appMenu = (fullscreenLabel: string) => {
     { label: "退出", role: "quit" }
   ];
   // 生产环境删除开发者工具菜单
-  if (!isDev) menuItems.splice(1, 1);
+  //if (!isDev) menuItems.splice(1, 1);
   const template = [
     {
       label: app.name,

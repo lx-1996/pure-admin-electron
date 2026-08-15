@@ -46,7 +46,7 @@ const DATA_TYPE_REG_COUNT: Record<DataType, number> = {
 };
 /** 单类点表（列式结构） */
 interface PointTable {
-  id: number[];
+  id?: number[];
   /** 点名；system_summary 暂未生成，待补充 */
   data_name: string[];
   data_type?: DataType[];
@@ -69,7 +69,7 @@ interface ClassTable {
   class: string;
   isClusterParm: boolean;
   isBlockParm: boolean;
-  addr_start: string;
+  addr_start: number;
   addr_num: number;
   data_invalid_value?: string;
   data_disconnect_value?: string;
@@ -92,9 +92,9 @@ interface ClassTable {
 // ---------- 生成工具 ----------
 
 /** 生成 n 个从 1 开始的类内序号 */
-function seq(n: number): number[] {
-  return Array.from({ length: n }, (_, i) => i + 1);
-}
+// function seq(n: number): number[] {
+//   return Array.from({ length: n }, (_, i) => i + 1);
+// }
 
 /** 生成 n 个递增点名 */
 function names(prefix: string, n: number): string[] {
@@ -475,24 +475,24 @@ const params_irregular_props = {
 
 const params_propMap: Record<ClassType, PointTable> = {
   cell_vltg: {
-    id: seq(ADDR_NUM_MAP.cell),
+    //id: seq(ADDR_NUM_MAP.cell),
     data_name: names("cell_vltg", ADDR_NUM_MAP.cell)
   },
   cell_temp: {
-    id: seq(ADDR_NUM_MAP.cell),
+    //id: seq(ADDR_NUM_MAP.cell),
     data_name: names("cell_temp", ADDR_NUM_MAP.cell)
   },
   cell_soc: {
-    id: seq(ADDR_NUM_MAP.cell),
+    //id: seq(ADDR_NUM_MAP.cell),
     data_name: names("cell_soc", ADDR_NUM_MAP.cell)
   },
   cell_soh: {
-    id: seq(ADDR_NUM_MAP.cell),
+    //id: seq(ADDR_NUM_MAP.cell),
     data_name: names("cell_soh", ADDR_NUM_MAP.cell)
   },
   system_summary: {
     // data_name 待补充
-    id: seq(ADDR_NUM_MAP.system_summary),
+    //id: seq(ADDR_NUM_MAP.system_summary),
     data_name: params_irregular_props.system_summary.data_name,
     data_type: params_irregular_props.system_summary.data_type,
     data_min: params_irregular_props.system_summary.data_min,
@@ -511,7 +511,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     class: "cell_vltg",
     isClusterParm: true,
     isBlockParm: false,
-    addr_start: "0x0000",
+    addr_start: 0x0000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
     data_disconnect_value: "0x7FFE",
@@ -528,7 +528,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     class: "cell_temp",
     isClusterParm: true,
     isBlockParm: false,
-    addr_start: "0x1000",
+    addr_start: 0x1000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
     data_disconnect_value: "0x7FFE",
@@ -545,7 +545,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     class: "cell_soc",
     isClusterParm: true,
     isBlockParm: false,
-    addr_start: "0x2000",
+    addr_start: 0x2000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
     data_type: "uint16",
@@ -561,7 +561,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     class: "cell_soh",
     isClusterParm: true,
     isBlockParm: false,
-    addr_start: "0x3000",
+    addr_start: 0x3000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
     data_type: "uint16",
@@ -577,7 +577,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     class: "system_summary",
     isClusterParm: true,
     isBlockParm: false,
-    addr_start: "0x4000",
+    addr_start: 0x4000,
     addr_num: ADDR_NUM_MAP.system_summary,
     data_invalid_value: "0x7FFF",
     data_props: params_propMap.system_summary
@@ -619,10 +619,24 @@ function assertColumnLength(): void {
     }
   }
 }
+function build_data(data: number[], cls: ClassTable) {
+  // if (data.length !== cls.addr_num) {
+  //   throw new Error(`[点表] 数据长度(${data.length})与 addr_num(${cls.addr_num}) 不一致`);
+  // }
+  const data_build = data.map((item, index) => {
+    return {
+      id: index + 1,
+      data_name: cls.data_props.data_name[index],
+      data_value: item
+    };
+  });
+  return data_build;
+}
 export {
   assertColumnLength,
   classes_filedsMap,
   DATA_TYPE_REG_COUNT,
-  class_which_data_propsInside
+  class_which_data_propsInside,
+  build_data
 };
-export type { DataType, ParsingMethod, PointTable, ClassTable };
+export type { DataType, ParsingMethod, PointTable, ClassTable, ClassType };

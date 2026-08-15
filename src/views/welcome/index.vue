@@ -1,28 +1,24 @@
 <script setup lang="ts">
-import { ref, onBeforeMount, onBeforeUnmount } from "vue";
+import { list } from "./list";
+import { ref } from "vue";
 defineOptions({
   name: "Welcome"
 });
-const data = ref();
-let listenerId: number | null = null;
-
-function onData(_event: any, value: any) {
-  console.log(value);
-  data.value = value;
+const selected = ref(0);
+function tabClick({ index }) {
+  selected.value = index;
 }
-
-onBeforeMount(() => {
-  listenerId = window.ipcRenderer.on("modbus-data", onData);
-});
-
-onBeforeUnmount(() => {
-  if (listenerId !== null) {
-    window.ipcRenderer.off(listenerId);
-    listenerId = null;
-  }
-});
 </script>
 
 <template>
-  <div v-if="data">{{ data }}</div>
+  <el-tabs @tab-click="tabClick">
+    <template v-for="(item, index) of list" :key="item.key">
+      <el-tab-pane :lazy="true">
+        <template #label>
+          <span>{{ item.title }}</span>
+        </template>
+        <component :is="item.component" v-if="selected == index" />
+      </el-tab-pane>
+    </template>
+  </el-tabs>
 </template>

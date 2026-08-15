@@ -1,5 +1,6 @@
 ﻿import { fork, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
+import type { WorkerMessage } from "./worker/types/worker";
 type SendToRenderer = (channel: string, data: unknown) => void;
 let worker: ChildProcess | null = null;
 function startWorker(sendToRenderer: SendToRenderer, dirname: any) {
@@ -7,25 +8,8 @@ function startWorker(sendToRenderer: SendToRenderer, dirname: any) {
   worker = fork(workerPath);
   worker.on("message", message => {
     const msg = message as WorkerMessage;
-
-    switch (msg.type) {
-      case "data":
-        //console.log("实时数据", msg.data);
-
-        sendToRenderer("modbus-data", msg.data);
-
-        break;
-
-      case "alarm":
-        console.log("告警", msg.data);
-
-        break;
-
-      case "error":
-        console.error(msg.message);
-
-        break;
-    }
+    //console.log(msg)
+    sendToRenderer(msg.type, msg.data);
   });
   worker.on("error", error => {
     console.error("Worker 错误:", error);
