@@ -10,7 +10,7 @@ export function useColumns() {
   const loading = ref(true);
   const columns: TableColumnList = [
     {
-      label: "名称",
+      label: "id",
       prop: "id"
     },
     {
@@ -73,7 +73,7 @@ export function useColumns() {
   let listenerId: number | null = null;
 
   function onData(_event: any, value: any) {
-    console.log("cell_soh");
+    //console.log("cell_soh");
     data.value = Array.isArray(value) ? value : [];
     loading.value = false;
     loadingConfig.text = "加载完成";

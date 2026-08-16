@@ -88,9 +88,25 @@ interface ClassTable {
   /** bitfield 解析专用：解析的 bit 位数 */
   bit_length?: number;
 }
-
+interface Build_data {
+  id: number;
+  data_name: string;
+  data_type?: DataType;
+  data_min?: number;
+  data_max?: number;
+  data_res?: number;
+  data_offset?: number;
+  data_unit?: UNITTYPE;
+  data_parsing?: ParsingMethod;
+  /** 该参数占用的寄存器数；缺省按 DATA_TYPE_REG_COUNT 依据 data_type 推导 */
+  reg_count?: number;
+  /** bitfield 解析专用：起始 bit 位（0 为最低位） */
+  bit_offset?: number;
+  /** bitfield 解析专用：解析的 bit 位数 */
+  bit_length?: number;
+  data_value: number;
+}
 // ---------- 生成工具 ----------
-
 /** 生成 n 个从 1 开始的类内序号 */
 // function seq(n: number): number[] {
 //   return Array.from({ length: n }, (_, i) => i + 1);
@@ -230,25 +246,25 @@ const params_irregular_props = {
     data_min: [
       ...SHARE.zero(16),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return -400;
-        if (index == 12 || index == 13) return -400;
+        if (index % 2 == 0 && index <= 11) return -40;
+        if (index == 12 || index == 13) return -40;
         else return 0;
       }),
       ...SHARE.zero(16),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return -400;
-        if (index == 12 || index == 13) return -400;
+        if (index % 2 == 0 && index <= 11) return -40;
+        if (index == 12 || index == 13) return -40;
         else return 0;
       }),
       ...SHARE.zero(32),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return -400;
-        if (index == 12 || index == 13) return -400;
+        if (index % 2 == 0 && index <= 11) return -40;
+        if (index == 12 || index == 13) return -40;
         else return 0;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return -400;
-        if (index == 12 || index == 13) return -400;
+        if (index % 2 == 0 && index <= 11) return -40;
+        if (index == 12 || index == 13) return -40;
         else return 0;
       }),
       ...SHARE.zero(16)
@@ -260,8 +276,8 @@ const params_irregular_props = {
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1250;
-        if (index == 12 || index == 13) return 1250;
+        if (index % 2 == 0 && index <= 11) return 125;
+        if (index == 12 || index == 13) return 125;
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
@@ -270,28 +286,28 @@ const params_irregular_props = {
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1250;
-        if (index == 12 || index == 13) return 1250;
+        if (index % 2 == 0 && index <= 11) return 125;
+        if (index == 12 || index == 13) return 125;
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1000;
-        if (index == 12 || index == 13) return 1000;
+        if (index % 2 == 0 && index <= 11) return 100;
+        if (index == 12 || index == 13) return 100;
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1000;
-        if (index == 12 || index == 13) return 1000;
+        if (index % 2 == 0 && index <= 11) return 100;
+        if (index == 12 || index == 13) return 100;
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1250;
-        if (index == 12 || index == 13) return 1250;
+        if (index % 2 == 0 && index <= 11) return 125;
+        if (index == 12 || index == 13) return 125;
         else return 65535;
       }),
       ...Array.from({ length: 16 }, (_, index) => {
-        if (index % 2 == 0 && index <= 11) return 1250;
-        if (index == 12 || index == 13) return 1250;
+        if (index % 2 == 0 && index <= 11) return 125;
+        if (index == 12 || index == 13) return 125;
         else return 65535;
       }),
       ...SHARE[65535](16)
@@ -517,7 +533,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     data_disconnect_value: "0x7FFE",
     data_type: "uint16",
     data_min: 0,
-    data_max: 5000,
+    data_max: 5,
     data_res: 0.001,
     data_offset: 0,
     data_unit: "V",
@@ -533,8 +549,8 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     data_invalid_value: "0x7FFF",
     data_disconnect_value: "0x7FFE",
     data_type: "int16",
-    data_min: -400,
-    data_max: 1250,
+    data_min: -40,
+    data_max: 125,
     data_res: 0.1,
     data_offset: 0,
     data_unit: "℃",
@@ -550,7 +566,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     data_invalid_value: "0x7FFF",
     data_type: "uint16",
     data_min: 0,
-    data_max: 1000,
+    data_max: 100,
     data_res: 0.1,
     data_offset: 0,
     data_unit: "%",
@@ -566,7 +582,7 @@ const classes_filedsMap: Record<ClassType, ClassTable> = {
     data_invalid_value: "0x7FFF",
     data_type: "uint16",
     data_min: 0,
-    data_max: 1000,
+    data_max: 100,
     data_res: 0.1,
     data_offset: 0,
     data_unit: "%",
@@ -623,13 +639,29 @@ function build_data(data: number[], cls: ClassTable) {
   // if (data.length !== cls.addr_num) {
   //   throw new Error(`[点表] 数据长度(${data.length})与 addr_num(${cls.addr_num}) 不一致`);
   // }
-  const data_build = data.map((item, index) => {
-    return {
-      id: index + 1,
-      data_name: cls.data_props.data_name[index],
-      data_value: item
-    };
-  });
+  let data_build: Build_data[];
+  if (class_which_data_propsInside.includes(cls.class)) {
+    data_build = data.map((item, index) => {
+      return {
+        id: index + 1,
+        data_name: cls.data_props.data_name[index],
+        data_value: item
+      };
+    });
+  } else
+    data_build = data.map((item, index) => {
+      return {
+        id: index + 1,
+        data_name: cls.data_props.data_name[index],
+        data_value: item,
+        data_type: cls.data_props.data_type?.[index],
+        data_min: cls.data_props.data_min?.[index],
+        data_max: cls.data_props.data_max?.[index],
+        data_res: cls.data_props.data_res?.[index],
+        data_unit: cls.data_props.data_unit?.[index],
+        data_parsing: cls.data_props.data_parsing?.[index]
+      };
+    });
   return data_build;
 }
 export {

@@ -37,6 +37,7 @@ async function start() {
         "cell_soh",
         modbusTCPClient.client_data.bmu_config.total_cell_num
       );
+      await readData(modbusTCPClient, "system_summary");
     } catch (e) {
       console.error(e);
     }

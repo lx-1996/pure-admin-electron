@@ -2,6 +2,7 @@
 import CellTemp from "./celltemp/index.vue";
 import CellSOC from "./cellsoc/index.vue";
 import CellSOH from "./cellsoh/index.vue";
+import System_summary from "./system_summary/index.vue";
 export const list = [
   {
     key: "cell_vltg",
@@ -22,5 +23,10 @@ export const list = [
     key: "cell_soh",
     title: "单体SOH",
     component: CellSOH
+  },
+  {
+    key: "system_summary",
+    title: "系统汇总",
+    component: System_summary
   }
 ];
