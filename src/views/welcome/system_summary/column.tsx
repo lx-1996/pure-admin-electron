@@ -22,17 +22,29 @@ export function useColumns() {
       prop: "data_value"
     },
     {
-      label: "最小值",
-      prop: "data_min"
+      label: "地址",
+      prop: "data_address"
     },
     {
-      label: "最大值",
-      prop: "data_max"
+      label: "解析方式",
+      prop: "data_parsing_method"
     },
     {
-      label: "单位",
-      prop: "data_unit"
+      label: "bit配置",
+      prop: "data_bit_config"
     }
+    // {
+    //   label: "最小值",
+    //   prop: "data_min"
+    // },
+    // {
+    //   label: "最大值",
+    //   prop: "data_max"
+    // },
+    // {
+    //   label: "单位",
+    //   prop: "data_unit"
+    // }
   ];
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({

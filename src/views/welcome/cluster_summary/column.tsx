@@ -24,7 +24,35 @@ export function useColumns() {
     {
       label: "地址",
       prop: "data_address"
+    },
+    {
+      label: "数据类型",
+      prop: "data_type"
+    },
+    {
+      label: "解析方式",
+      prop: "data_parsing_method"
+    },
+    {
+      label: "寄存器数量",
+      prop: "data_word_length"
+    },
+    {
+      label: "bit配置",
+      prop: "data_bit_config"
     }
+    // {
+    //   label: "最小值",
+    //   prop: "data_min"
+    // },
+    // {
+    //   label: "最大值",
+    //   prop: "data_max"
+    // },
+    // {
+    //   label: "单位",
+    //   prop: "data_unit"
+    // }
   ];
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({
@@ -77,14 +105,14 @@ export function useColumns() {
   let listenerId: number | null = null;
 
   function onData(_event: any, value: any) {
-    //console.log("cell_soc");
+    //console.log(value);
     data.value = Array.isArray(value) ? value : [];
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
   }
   onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("cell_soc", onData);
+    listenerId = window.ipcRenderer.on("cluster_summary", onData);
   });
 
   onBeforeUnmount(() => {

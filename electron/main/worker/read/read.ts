@@ -1,7 +1,8 @@
 ﻿import type { ModbusTCPClient } from "../client/clientClass";
-import { classes_filedsMap, build_data } from "../dataPoint/tableGenerate";
+import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
 import type { ClassType } from "../dataPoint/tableGenerate";
 import type { WorkerDataMessage } from "../types/worker";
+import { parse_raw_data } from "../dataPoint/parse";
 const READ_PARAMS = {
   MAX_READ_NUM: 125,
   READ_INTERVAL: 1000
@@ -31,11 +32,7 @@ export async function readData(
   data_class: ClassType,
   add_num_config?: number
 ) {
-  const filedsMap = classes_filedsMap[data_class];
-  if (client.clientProps.client_status !== "connected") {
-    console.log("TCP客户端未连接，读取数据终止");
-    return;
-  }
+  const filedsMap = classes_fieldsMap[data_class];
   const addr_num = add_num_config ? add_num_config : filedsMap.addr_num;
   try {
     const read_data = await repeatRead(
@@ -44,12 +41,12 @@ export async function readData(
       addr_num,
       true
     );
-    //console.log(read_data);
     const data_build = build_data(read_data, filedsMap);
+    const data_parsed = parse_raw_data(data_build);
     //console.log(data_build);
     const message: WorkerDataMessage = {
       type: data_class,
-      data: data_build
+      data: data_parsed
     };
     process.send?.(message);
   } catch (e) {

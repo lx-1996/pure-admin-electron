@@ -6,7 +6,7 @@ async function initTCPClient(ip: string, port: number, timeout: number) {
   await modbusTCPClient.repeatConnect();
 }
 async function start() {
-  await initTCPClient("127.0.0.1", 502, 10000);
+  await initTCPClient("192.168.10.208", 502, 10000);
   if (modbusTCPClient.clientProps.client_status !== "connected") {
     return;
   }
@@ -38,6 +38,11 @@ async function start() {
         modbusTCPClient.client_data.bmu_config.total_cell_num
       );
       await readData(modbusTCPClient, "system_summary");
+      const cluster_summary = await readData(
+        modbusTCPClient,
+        "cluster_summary"
+      );
+      console.log(cluster_summary);
     } catch (e) {
       console.error(e);
     }
