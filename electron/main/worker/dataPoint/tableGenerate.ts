@@ -18,7 +18,7 @@ type ClassType =
   | "system_summary"
   | "cluster_summary";
 /** 寄存器数据类型 */
-type DataType = "uint16" | "int16" | "uint32" | "float" | "ascii";
+type DataType = "uint16" | "int16" | "uint32" | "float" | "ascii" | "bitfield";
 
 interface DataTypeConfig {
   data_type: DataType;
@@ -34,12 +34,10 @@ interface DataTypeConfig {
  * - bcd      ：BCD 码
  * - float    ：IEEE754 浮点（大端：高字节在前）
  *
- * 注：参数「占用几个寄存器」由 reg_count 字段表达，不再由本枚举承载；
  *     缺省时按 DATA_WORD_LENGTH 依据 data_type 推导。
  */
-type ParsingMethod = "linear" | "bitfield" | "ascii" | "bcd";
 type UNITTYPE = "V" | "℃" | "%" | "mV" | "/";
-
+type RES = 1 | 0.1 | 0.01 | 0.001;
 /** 各数据类型默认占用的寄存器数（1 寄存器 = 16 bit） */
 // const DATA_WORD_LENGTH: Record<DataType, number> = {
 //   uint16: 1,
@@ -48,11 +46,12 @@ type UNITTYPE = "V" | "℃" | "%" | "mV" | "/";
 //   float: 2
 // };
 interface BitConfig {
+  reg_idx: number;
   bit_offset: number;
   bit_length: number;
   bit_name?: string;
   bit_value?: number;
-  bit_mapping?: Record<number, string>[];
+  bit_mapping: Record<number, string>;
 }
 /** 单类点表（列式结构） */
 interface PointTable {
@@ -63,12 +62,10 @@ interface PointTable {
   data_type?: DataType[];
   data_min?: number[];
   data_max?: number[];
-  data_res?: number[];
+  data_res?: RES[];
   data_offset?: number[];
   data_unit?: UNITTYPE[];
-  data_parsing_method?: ParsingMethod[];
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  reg_count?: number[];
   data_word_length?: number[];
   data_bit_config?: any;
 }
@@ -85,13 +82,11 @@ interface ClassTable {
   data_type?: DataType;
   data_min?: number;
   data_max?: number;
-  data_res?: number;
+  data_res?: RES;
   data_unit?: UNITTYPE;
   data_offset?: number;
   data_props: PointTable;
-  data_parsing_method?: ParsingMethod;
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  reg_count?: number;
   data_bit_config?: BitConfig[];
 }
 interface Build_data {
@@ -101,12 +96,10 @@ interface Build_data {
   data_type?: DataType;
   data_min?: number;
   data_max?: number;
-  data_res?: number;
+  data_res?: RES;
   data_offset?: number;
   data_unit?: UNITTYPE;
-  data_parsing_method?: ParsingMethod;
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  reg_count?: number;
   data_bit_config?: BitConfig[];
   data_value: number | number[];
   data_word_length?: number;
@@ -214,28 +207,29 @@ const SHARE = {
       data_word_length: length
     }));
   },
+  bitfield(length: number, num: number): DataTypeConfig[] {
+    return Array.from({ length: num }, () => ({
+      data_type: "bitfield",
+      data_word_length: length
+    }));
+  },
   /** 0 常量列 */
   zero: (n: number): number[] => column(0, n),
   /** 0.001 分辨率常量列 */
-  res_0_001: (n: number): number[] => column(0.001, n),
+  res_0_001: (n: number): RES[] => column(0.001, n),
+  res_0_01: (n: number): RES[] => column(0.01, n),
   /** 0.1 分辨率常量列 */
-  res_0_1: (n: number): number[] => column(0.1, n),
+  res_0_1: (n: number): RES[] => column(0.1, n),
+  res_1: (n: number): RES[] => column(1, n),
   /** V 单位常量列 */
   unit_v: (n: number): UNITTYPE[] => column("V", n),
   /** ℃ 单位常量列 */
   unit_temp: (n: number): UNITTYPE[] => column("℃", n),
   /** % 单位常量列 */
   unit_pct: (n: number): UNITTYPE[] => column("%", n),
-  /** linear 线性解析常量列 */
-  linear: (n: number): ParsingMethod[] => column("linear", n),
-  regMapping: (n: number): ParsingMethod[] => column("linear", n),
-  /** bitfield 按位解析常量列 */
-  bitfield: (n: number): ParsingMethod[] => column("bitfield", n),
-  ascii_method: (n: number): ParsingMethod[] => column("ascii", n),
   reserved: (n: number): string[] => column("预留", n),
   backslash: (n: number): string[] => column("/", n),
-  1: (n: number): number[] => column(1, n),
-  65535: (n: number): number[] => column(65535, n),
+  max_65535: (n: number): number[] => column(65535, n),
   null: (n: number): null[] => column(null, n)
 };
 const Data_type: Record<"uint16" | "int16", DataTypeConfig> = {
@@ -277,14 +271,25 @@ const params_data_type = {
     ...SHARE.uint16(16)
   ],
   cluster_summary: [
-    ...SHARE.uint16(10),
+    ...SHARE.uint16(3),
+    ...SHARE.bitfield(1, 2),
+    ...SHARE.uint16(2),
+    ...SHARE.int16(1),
+    ...SHARE.uint16(2), //绝缘电阻R-
     ...SHARE.int16(5),
-    ...SHARE.uint16(15),
-    ...SHARE.uint32(6),
+    ...SHARE.bitfield(2, 1),
+    ...SHARE.bitfield(1, 1),
+    ...SHARE.uint16(4),
+    ...SHARE.bitfield(1, 1), //充电SOP有效校验标识
+    ...SHARE.uint16(3),
+    ...SHARE.bitfield(1, 1),
+    ...SHARE.uint16(3),
+    ...SHARE.uint32(6), //簇端最大允许充电功率
     ...SHARE.uint16(2),
     ...SHARE.int16(2),
-    ...SHARE.uint16(5),
-    ...SHARE.uint16(1),
+    ...SHARE.bitfield(1, 1),
+    ...SHARE.uint16(4),
+    ...SHARE.bitfield(1, 1),
     ...SHARE.uint32(3),
     ...SHARE.uint16(4),
     ...SHARE.ascii(7, 9),
@@ -376,10 +381,10 @@ const params_irregular_props = {
         if (index == 12 || index == 13) return 125;
         else return 65535;
       }),
-      ...SHARE[65535](16)
+      ...SHARE.max_65535(16)
     ],
     data_res: [
-      ...SHARE[1](16),
+      ...SHARE.res_1(16),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return 0.1;
         if (index == 12 || index == 13) return 0.1;
@@ -415,7 +420,7 @@ const params_irregular_props = {
         if (index == 12 || index == 13) return 0.1;
         else return 1;
       }),
-      ...SHARE[1](16)
+      ...SHARE.res_1(16)
     ],
     data_unit: [
       ...Array.from({ length: 16 }, (_, index) => {
@@ -478,8 +483,7 @@ const params_irregular_props = {
       "温度3",
       "温度4",
       "温度5",
-      "系统总状态位1",
-      "系统总状态位2",
+      "系统总状态位",
       "系统控制动作状态",
       "预留",
       "簇SOC",
@@ -540,25 +544,35 @@ const params_irregular_props = {
     data_word_length: params_data_type.cluster_summary.map(
       item => item.data_word_length
     ),
-    data_parsing_method: [
-      ...SHARE.linear(3),
-      ...SHARE.bitfield(2),
-      ...SHARE.linear(10),
-      ...SHARE.bitfield(3),
-      ...SHARE.linear(22),
-      ...SHARE.bitfield(1),
-      ...SHARE.linear(12),
-      ...SHARE.ascii_method(9),
-      ...SHARE.linear(131)
+    data_res: [
+      ...SHARE.res_1(5),
+      ...SHARE.res_0_1(3),
+      ...SHARE.res_1(2),
+      ...SHARE.res_0_1(5),
+      ...SHARE.res_1(3),
+      ...SHARE.res_0_1(3),
+      ...SHARE.res_1(1),
+      ...SHARE.res_0_1(1), //充电SOP
+      ...SHARE.res_1(3),
+      ...SHARE.res_0_1(1),
+      ...SHARE.res_1(2),
+      ...SHARE.res_0_1(2),
+      ...SHARE.res_0_01(4),
+      ...SHARE.res_0_1(1), //簇真实SOC
+      ...SHARE.res_1(1),
+      ...SHARE.res_0_1(2), //簇真实SOC\
+      ...SHARE.res_1(153)
     ],
+    data_offset: SHARE.zero(192),
     data_bit_config: [
       ...SHARE.null(3),
       [
         {
+          reg_idx: 0,
           bit_offset: 0,
-          bit_lenght: 16,
+          bit_length: 16,
           bit_mapping: {
-            0: "静止",
+            0: "静置",
             1: "充电",
             2: "放电",
             3: "开路",
@@ -568,8 +582,9 @@ const params_irregular_props = {
       ],
       [
         {
+          reg_idx: 0,
           bit_offset: 0,
-          bit_lenght: 16,
+          bit_length: 16,
           bit_mapping: {
             0: "无故障",
             1: "严重故障",
@@ -581,8 +596,9 @@ const params_irregular_props = {
       ...SHARE.null(10),
       [
         {
+          reg_idx: 0,
           bit_offset: 0,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "静置状态",
           bit_mapping: {
             0: "未静置",
@@ -590,8 +606,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 1,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "充电状态",
           bit_mapping: {
             0: "未充电",
@@ -599,8 +616,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 2,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "放电状态",
           bit_mapping: {
             0: "未放电",
@@ -608,8 +626,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 3,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "禁充状态",
           bit_mapping: {
             0: "未禁充",
@@ -617,8 +636,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 4,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "禁放状态",
           bit_mapping: {
             0: "未禁放",
@@ -626,8 +646,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 5,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "禁充禁放",
           bit_mapping: {
             0: "未禁充禁放",
@@ -635,8 +656,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 6,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "告警状态",
           bit_mapping: {
             0: "未告警",
@@ -644,8 +666,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 7,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "故障状态",
           bit_mapping: {
             0: "未故障",
@@ -653,8 +676,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 8,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "充电功率锁存状态",
           bit_mapping: {
             0: "未充电功率锁存中",
@@ -662,8 +686,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 9,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "放电功率锁存状态",
           bit_mapping: {
             0: "未放电功率锁存中",
@@ -671,8 +696,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 10,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "充电指令",
           bit_mapping: {
             0: "未接收到充电指令",
@@ -680,8 +706,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 11,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "充电指令完成状态",
           bit_mapping: {
             0: "充电闭合未完成",
@@ -689,8 +716,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 12,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "放电指令",
           bit_mapping: {
             0: "未接收到放电指令",
@@ -698,8 +726,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 13,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "放电指令完成状态",
           bit_mapping: {
             0: "放电闭合未完成",
@@ -707,8 +736,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 14,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "脱离母线指令",
           bit_mapping: {
             0: "未接收到脱离母线指令",
@@ -716,19 +746,19 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 15,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "脱离母线指令完成状态",
           bit_mapping: {
             0: "断开接触器未完成",
             1: "断开接触器完成"
           }
-        }
-      ],
-      [
+        },
         {
+          reg_idx: 1,
           bit_offset: 0,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "运维模式",
           bit_mapping: {
             0: "非运维模式",
@@ -736,8 +766,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 1,
           bit_offset: 1,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "测试模式",
           bit_mapping: {
             0: "正常模式",
@@ -745,8 +776,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 1,
           bit_offset: 2,
-          bit_lenght: 1,
+          bit_length: 1,
           bit_name: "初始化状态",
           bit_mapping: {
             0: "初始化完成",
@@ -756,8 +788,9 @@ const params_irregular_props = {
       ],
       [
         {
+          reg_idx: 0,
           bit_offset: 0,
-          bit_lenght: 2,
+          bit_length: 2,
           bit_name: "高压允许闭合状态",
           bit_mapping: {
             0: "初始状态",
@@ -766,8 +799,9 @@ const params_irregular_props = {
           }
         },
         {
+          reg_idx: 0,
           bit_offset: 0,
-          bit_lenght: 2,
+          bit_length: 2,
           bit_name: "分励脱扣动作",
           bit_mapping: {
             0: "初始状态",
@@ -776,11 +810,45 @@ const params_irregular_props = {
           }
         }
       ],
-      ...SHARE.null(22),
+      ...SHARE.null(4),
       [
         {
+          reg_idx: 0,
+          bit_offset: 0,
+          bit_length: 16,
+          bit_mapping: {
+            0x5bb5: "有效",
+            0x1221: "无效"
+          }
+        }
+      ],
+      ...SHARE.null(3),
+      [
+        {
+          reg_idx: 0,
+          bit_offset: 0,
+          bit_length: 16,
+          bit_mapping: {
+            0x5bb5: "有效",
+            0x1221: "无效"
+          }
+        }
+      ],
+      ...SHARE.null(13),
+      [
+        {
+          reg_idx: 0,
+          bit_offset: 0,
+          bit_length: 1,
+          bit_mapping: {
+            0: "无故障",
+            1: "有故障"
+          }
+        },
+        {
+          reg_idx: 0,
           bit_offset: 1,
-          bit_lenght: 7,
+          bit_length: 7,
           bit_mapping: {
             1: "存储错误",
             2: "过流检测",
@@ -797,8 +865,9 @@ const params_irregular_props = {
       ...SHARE.null(4),
       [
         {
+          reg_idx: 0,
           bit_offset: 1,
-          bit_lenght: 16,
+          bit_length: 16,
           bit_mapping: {
             0: "系统正常",
             1: "系统重启"
@@ -837,14 +906,13 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_res: params_irregular_props.system_summary.data_res,
     data_offset: SHARE.zero(ADDR_NUM_MAP.system_summary),
     data_unit: params_irregular_props.system_summary.data_unit,
-    data_parsing_method: SHARE.linear(ADDR_NUM_MAP.system_summary),
     data_word_length: params_irregular_props.system_summary.data_word_length
   },
   cluster_summary: {
     data_name: params_irregular_props.cluster_summary.data_name,
     data_type: params_irregular_props.cluster_summary.data_type,
-    data_parsing_method:
-      params_irregular_props.cluster_summary.data_parsing_method,
+    data_res: params_irregular_props.cluster_summary.data_res,
+    data_offset: params_irregular_props.cluster_summary.data_offset,
     data_word_length: params_irregular_props.cluster_summary.data_word_length,
     data_bit_config: params_irregular_props.cluster_summary.data_bit_config
   }
@@ -867,7 +935,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     data_res: 0.001,
     data_offset: 0,
     data_unit: "V",
-    data_parsing_method: "linear",
     data_props: params_propMap.cell_vltg
   },
   cell_temp: {
@@ -884,7 +951,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     data_res: 0.1,
     data_offset: 0,
     data_unit: "℃",
-    data_parsing_method: "linear",
     data_props: params_propMap.cell_temp
   },
   cell_soc: {
@@ -900,7 +966,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     data_res: 0.1,
     data_offset: 0,
     data_unit: "%",
-    data_parsing_method: "linear",
     data_props: params_propMap.cell_soc
   },
   cell_soh: {
@@ -916,7 +981,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     data_res: 0.1,
     data_offset: 0,
     data_unit: "%",
-    data_parsing_method: "linear",
     data_props: params_propMap.cell_soh
   },
   system_summary: {
@@ -949,9 +1013,7 @@ const POINT_COLUMNS: (keyof PointTable)[] = [
   "data_max",
   "data_res",
   "data_offset",
-  "data_unit",
-  "data_parsing_method",
-  "reg_count"
+  "data_unit"
 ];
 const class_which_data_propsInside = [
   "cell_vltg",
@@ -978,45 +1040,57 @@ function build_data(data: number[], cls: ClassTable) {
   let dataIndex = 0; // 原始寄存器索引
 
   let paramIndex = 0; // 参数索引
+  if (class_which_data_propsInside.includes(cls.class)) {
+    return data.map((item, index) => {
+      return {
+        id: index + 1,
+        data_name: cls.data_props.data_name[index],
+        data_value: item,
+        data_address: cls.addr_start + index,
+        data_type: cls.data_type,
+        data_res: cls.data_res,
+        data_offset: cls.data_offset,
+        data_word_length: cls.data_props.data_word_length?.[index],
+        data_bit_config: cls.data_props.data_bit_config?.[index]
+      };
+    });
+  } else {
+    while (dataIndex < data.length) {
+      const wordLength = cls.data_props.data_word_length?.[paramIndex] ?? 1;
 
-  while (dataIndex < data.length) {
-    const wordLength = cls.data_props.data_word_length?.[paramIndex] ?? 1;
+      let rawValue: number | number[];
 
-    let rawValue: number | number[];
+      if (wordLength === 1) {
+        rawValue = data[dataIndex];
+      } else {
+        rawValue = data.slice(dataIndex, dataIndex + wordLength);
+      }
 
-    if (wordLength === 1) {
-      rawValue = data[dataIndex];
-    } else {
-      rawValue = data.slice(dataIndex, dataIndex + wordLength);
+      data_build.push({
+        id: paramIndex + 1,
+
+        data_name: cls.data_props.data_name[paramIndex],
+
+        data_address: cls.addr_start + dataIndex,
+
+        data_value: rawValue,
+
+        data_type: cls.data_props.data_type?.[paramIndex],
+
+        data_res: cls.data_props.data_res?.[paramIndex],
+
+        data_offset: cls.data_props.data_offset?.[paramIndex],
+        data_word_length: cls.data_props.data_word_length?.[paramIndex],
+        data_bit_config: cls.data_props.data_bit_config?.[paramIndex]
+      });
+
+      dataIndex += wordLength;
+
+      paramIndex++;
     }
 
-    data_build.push({
-      id: paramIndex + 1,
-
-      data_name: cls.data_props.data_name[paramIndex],
-
-      data_address: cls.addr_start + dataIndex,
-
-      data_value: rawValue,
-
-      data_type: cls.data_props.data_type?.[paramIndex],
-
-      data_res: cls.data_props.data_res?.[paramIndex],
-
-      data_offset: cls.data_props.data_offset?.[paramIndex],
-
-      data_parsing_method: cls.data_props.data_parsing_method?.[paramIndex],
-
-      data_word_length: cls.data_props.data_word_length?.[paramIndex],
-      data_bit_config: cls.data_props.data_bit_config?.[paramIndex]
-    });
-
-    dataIndex += wordLength;
-
-    paramIndex++;
+    return data_build;
   }
-
-  return data_build;
 }
 export {
   assertColumnLength,
@@ -1026,10 +1100,10 @@ export {
 };
 export type {
   DataType,
-  ParsingMethod,
   PointTable,
   ClassTable,
   ClassType,
   BitConfig,
-  Build_data
+  Build_data,
+  RES
 };

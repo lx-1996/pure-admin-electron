@@ -19,15 +19,19 @@ export function useColumns() {
     },
     {
       label: "值",
-      prop: "data_value"
+      prop: "data_parsed"
     },
     {
       label: "地址",
       prop: "data_address"
     },
     {
-      label: "解析方式",
-      prop: "data_parsing_method"
+      label: "数据类型",
+      prop: "data_type"
+    },
+    {
+      label: "寄存器数量",
+      prop: "data_word_length"
     },
     {
       label: "bit配置",

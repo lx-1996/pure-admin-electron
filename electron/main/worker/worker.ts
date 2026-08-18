@@ -22,6 +22,7 @@ async function start() {
         "cell_vltg",
         modbusTCPClient.client_data.bmu_config.total_cell_num
       );
+      //console.log(vltg);
       await readData(
         modbusTCPClient,
         "cell_temp",
@@ -38,11 +39,8 @@ async function start() {
         modbusTCPClient.client_data.bmu_config.total_cell_num
       );
       await readData(modbusTCPClient, "system_summary");
-      const cluster_summary = await readData(
-        modbusTCPClient,
-        "cluster_summary"
-      );
-      console.log(cluster_summary);
+      await readData(modbusTCPClient, "cluster_summary");
+      // console.log(cluster_summary);
     } catch (e) {
       console.error(e);
     }

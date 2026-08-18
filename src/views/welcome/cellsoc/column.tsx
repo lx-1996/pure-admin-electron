@@ -19,12 +19,12 @@ export function useColumns() {
     },
     {
       label: "值",
-      prop: "data_value"
-    },
-    {
-      label: "地址",
-      prop: "data_address"
+      prop: "data_parsed"
     }
+    // {
+    //   label: "地址",
+    //   prop: "data_address"
+    // }
   ];
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({

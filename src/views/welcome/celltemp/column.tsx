@@ -19,7 +19,7 @@ export function useColumns() {
     },
     {
       label: "值",
-      prop: "data_value"
+      prop: "data_parsed"
     }
   ];
   /** 分页配置 */

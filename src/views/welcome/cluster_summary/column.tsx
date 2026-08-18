@@ -19,7 +19,7 @@ export function useColumns() {
     },
     {
       label: "值",
-      prop: "data_value"
+      prop: "data_parsed"
     },
     {
       label: "地址",
@@ -28,10 +28,6 @@ export function useColumns() {
     {
       label: "数据类型",
       prop: "data_type"
-    },
-    {
-      label: "解析方式",
-      prop: "data_parsing_method"
     },
     {
       label: "寄存器数量",

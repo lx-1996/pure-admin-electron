@@ -43,7 +43,7 @@ export async function readData(
     );
     const data_build = build_data(read_data, filedsMap);
     const data_parsed = parse_raw_data(data_build);
-    //console.log(data_build);
+    //data_build.filter((item) => item.data_bit_config).forEach(item => console.log(item.data_bit_config))
     const message: WorkerDataMessage = {
       type: data_class,
       data: data_parsed
