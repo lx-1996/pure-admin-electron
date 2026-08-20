@@ -30,7 +30,8 @@ async function repeatRead(
 export async function readData(
   client: ModbusTCPClient,
   data_class: ClassType,
-  add_num_config?: number
+  add_num_config?: number,
+  isInput: boolean = true
 ) {
   const filedsMap = classes_fieldsMap[data_class];
   const addr_num = add_num_config ? add_num_config : filedsMap.addr_num;
@@ -39,7 +40,7 @@ export async function readData(
       client,
       filedsMap.addr_start,
       addr_num,
-      true
+      isInput
     );
     const data_build = build_data(read_data, filedsMap);
     const data_parsed = parse_raw_data(data_build);

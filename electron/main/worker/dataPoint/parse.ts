@@ -1,25 +1,25 @@
 ﻿import type * as table from "./tableGenerate";
 interface FieldsForParse {
-  data_type: table.DataType;
-  data_res: table.RES;
-  data_offset: number;
-  data_bit_config?: table.BitConfig[];
+  data_type?: table.DataType;
+  data_res?: table.RES;
+  data_offset?: number;
+  data_bit_config?: table.BitConfig[] | null;
   data_word_length?: number;
 }
-function get_decimal_places(res: table.RES) {
+function get_decimal_places(res: table.RES | undefined): number {
   switch (res) {
-    case 1:
-      return 0;
     case 0.1:
       return 1;
     case 0.01:
       return 2;
     case 0.001:
       return 3;
+    default:
+      return 0; // 含 res=1 与 undefined
   }
 }
 function parse_linear_uint16(data: number, fields: FieldsForParse) {
-  const { data_type, data_res, data_offset } = fields;
+  const { data_type, data_res = 1, data_offset = 0 } = fields;
   let value = data;
   if (data_type === "int16") {
     value = data & 0x8000 ? data - 0x10000 : data;
@@ -27,21 +27,19 @@ function parse_linear_uint16(data: number, fields: FieldsForParse) {
   const decimal_places = get_decimal_places(data_res);
   return (value * data_res + data_offset).toFixed(decimal_places);
 }
-function parse_linear_uint32(data: any, fields: any) {
-  const [low, high] = data;
-  const { data_res, data_offset } = fields;
+function parse_linear_uint32(data: number[], fields: FieldsForParse) {
+  const [low = 0, high = 0] = data;
+  const { data_res = 1, data_offset = 0 } = fields;
   const value = high * 0x10000 + low;
   const decimal_places = get_decimal_places(data_res);
   return (value * data_res + data_offset).toFixed(decimal_places);
 }
-function parse_ascii_ascii(data: number[]) {
-  if (!Array.isArray(data)) {
-    data = data !== undefined ? [data] : [];
-  }
-  const result: any = [];
+function parse_ascii(data: number | number[]) {
+  const regs = Array.isArray(data) ? data : data !== undefined ? [data] : [];
+  const result: string[] = [];
 
   // 遍历每个寄存器的十进制数
-  data.forEach(reg => {
+  regs.forEach(reg => {
     if (reg === 0) {
       result.push("0"); // 用 0 替换
       return;
@@ -68,12 +66,34 @@ function parse_ascii_ascii(data: number[]) {
       isValidAscii(secondCharCode) ? String.fromCharCode(secondCharCode) : " "
     );
   });
-  function isValidAscii(code: any) {
+  function isValidAscii(code: number) {
     return code >= 32 && code <= 126;
   }
   // 返回组合后的字符串
   return result.join("");
 }
+function parse_bitfield_value(
+  data: number[] | number,
+  data_bit_config: table.BitConfig[]
+) {
+  // console.log('data', data)
+  // console.log('data_bit_config', data_bit_config)
+  const res = data_bit_config?.map(item => {
+    const item_value = Array.isArray(data)
+      ? (data[item.reg_idx] ?? 0)
+      : (data ?? 0);
+    //console.log('item_value', item_value)
+    const mask = 2 ** item.bit_length - 1;
+    //console.log('mask', mask)
+    const item_bit_value = (item_value >> item.bit_offset) & mask;
+    return {
+      bit_name: item?.bit_name,
+      bit_value: item_bit_value
+    };
+  });
+  return res.map(item => item.bit_value).join(",");
+}
+// 遍历每个寄存器的十进制数
 function parse_bitfield(
   data: number[] | number,
   data_bit_config: table.BitConfig[]
@@ -81,21 +101,26 @@ function parse_bitfield(
   // let parsed_data: number[]
   // console.log('data', data)
   const res = data_bit_config?.map(item => {
-    const item_value = Array.isArray(data) ? data[item.reg_idx] : data;
+    const item_value = Array.isArray(data)
+      ? (data[item.reg_idx] ?? 0)
+      : (data ?? 0);
     //console.log('item_value', item_value)
-    const mask = (1 << item.bit_length) - 1;
+    const mask = 2 ** item.bit_length - 1;
     //console.log('mask', mask)
     const item_bit_value = (item_value >> item.bit_offset) & mask;
     return {
       bit_name: item?.bit_name,
-      bit_value: item.bit_mapping[item_bit_value]
+      bit_value: item?.bit_mapping?.[item_bit_value] ?? null
     };
   });
-  return res.map(item => item.bit_value).join(",");
+  return res
+    .map(item => item.bit_value?.trim())
+    .filter(Boolean)
+    .join(",");
 }
 function judge_data_type(
-  data_type: table.DataType,
-  data_bit_config: table.BitConfig[]
+  data_type: table.DataType | undefined,
+  data_bit_config: table.BitConfig[] | null | undefined
 ) {
   if (data_type == "uint16" || data_type == "int16") {
     return "isUint16";
@@ -103,43 +128,71 @@ function judge_data_type(
     return "isUint32";
   } else if (data_type == "ascii") {
     return "isASCII";
-  } else if (data_type == "bitfield" && data_bit_config?.length > 0) {
+  } else if (
+    data_type == "bitfield" &&
+    data_bit_config?.length &&
+    data_bit_config.every(item => item.bit_value == true)
+  ) {
+    return "isBitfield_value";
+  } else if (data_type == "bitfield" && data_bit_config?.length) {
     return "isBitfield";
+  } else if (data_type == "hex") {
+    return "isHex";
   }
 }
 function parse_raw_data(build_data: table.Build_data[]) {
   //console.log(build_data)
   try {
-    return build_data.map((item: any) => {
+    return build_data.map(item => {
       const { data_type, data_res, data_offset, data_value, data_bit_config } =
         item;
       switch (judge_data_type(data_type, data_bit_config)) {
         case "isUint16": {
-          const data_parsed = parse_linear_uint16(data_value, {
-            data_type,
-            data_res,
-            data_offset
-          });
+          const data_parsed = parse_linear_uint16(
+            Array.isArray(data_value) ? (data_value[0] ?? 0) : data_value,
+            {
+              data_type,
+              data_res,
+              data_offset
+            }
+          );
           return { ...item, data_parsed };
         }
         case "isUint32": {
-          const data_parsed = parse_linear_uint32(data_value, {
-            data_res,
-            data_offset
-          });
+          const data_parsed = parse_linear_uint32(
+            Array.isArray(data_value) ? data_value : [data_value],
+            {
+              data_res,
+              data_offset
+            }
+          );
           return { ...item, data_parsed };
         }
         case "isASCII": {
-          const data_parsed = parse_ascii_ascii(data_value);
+          const data_parsed = parse_ascii(data_value);
+          return { ...item, data_parsed };
+        }
+        case "isHex": {
+          const data_parsed = Array.isArray(data_value)
+            ? data_value.map(num => num.toString(16).padStart(4, "0")).join("")
+            : (data_value ?? 0).toString(16).padStart(4, "0");
           return { ...item, data_parsed };
         }
         case "isBitfield": {
-          //console.log(data_bit_config)
-          const data_parsed = parse_bitfield(data_value, data_bit_config);
-          return { ...item, data_parsed: data_parsed };
+          // judge_data_type 已保证 data_bit_config 非空，此处防御性再判
+          const data_parsed = data_bit_config?.length
+            ? parse_bitfield(data_value, data_bit_config)
+            : undefined;
+          return { ...item, data_parsed };
+        }
+        case "isBitfield_value": {
+          const data_parsed = data_bit_config?.length
+            ? parse_bitfield_value(data_value, data_bit_config)
+            : undefined;
+          return { ...item, data_parsed };
         }
         default: {
-          return { ...item, data_parsed: item?.data_value };
+          return { ...item, data_parsed: item.data_value };
         }
       }
     });

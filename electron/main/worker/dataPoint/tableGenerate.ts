@@ -16,42 +16,43 @@ type ClassType =
   | "cell_soc"
   | "cell_soh"
   | "system_summary"
-  | "cluster_summary";
+  | "cluster_summary"
+  | "pack_summary";
 /** 寄存器数据类型 */
-type DataType = "uint16" | "int16" | "uint32" | "float" | "ascii" | "bitfield";
+type DataType =
+  | "uint16"
+  | "int16"
+  | "uint32"
+  | "float"
+  | "ascii"
+  | "bitfield"
+  | "hex";
 
 interface DataTypeConfig {
   data_type: DataType;
   data_word_length: number;
 }
-/**
- * 数据解析方式（解码算法）
- *
- * - linear   ：线性量，物理值 = raw * data_res + data_offset
- * - bitfield ：按位解析，需配合 bit_offset（起始位，0 为最低位）+ bit_length（位数）
- * - regMapping ：寄存器值映射，需配合 reg_mapping 字段
- * - ascii    ：ASCII 字符串，1 个寄存器存 2 个字符，长度由 reg_count 决定
- * - bcd      ：BCD 码
- * - float    ：IEEE754 浮点（大端：高字节在前）
- *
- *     缺省时按 DATA_WORD_LENGTH 依据 data_type 推导。
- */
-type UNITTYPE = "V" | "℃" | "%" | "mV" | "/";
+type UNITTYPE =
+  | "V"
+  | "℃"
+  | "%"
+  | "mV"
+  | "/"
+  | "A"
+  | "kΩ"
+  | "kW"
+  | "kWh"
+  | "Ah"
+  | "kB";
 type RES = 1 | 0.1 | 0.01 | 0.001;
-/** 各数据类型默认占用的寄存器数（1 寄存器 = 16 bit） */
-// const DATA_WORD_LENGTH: Record<DataType, number> = {
-//   uint16: 1,
-//   int16: 1,
-//   uint32: 2,
-//   float: 2
-// };
 interface BitConfig {
   reg_idx: number;
   bit_offset: number;
   bit_length: number;
   bit_name?: string;
-  bit_value?: number;
-  bit_mapping: Record<number, string>;
+  bit_value?: boolean;
+  bit_value_type?: string;
+  bit_mapping?: Record<number, string>;
 }
 /** 单类点表（列式结构） */
 interface PointTable {
@@ -67,14 +68,14 @@ interface PointTable {
   data_unit?: UNITTYPE[];
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
   data_word_length?: number[];
-  data_bit_config?: any;
+  /** 位解析配置列：按参数索引对齐，无位配置的参数为 null */
+  data_bit_config?: (BitConfig[] | null)[];
 }
 
 /** 点表类定义 */
 interface ClassTable {
   class: string;
   isClusterParm: boolean;
-  isBlockParm: boolean;
   addr_start: number;
   addr_num: number;
   data_invalid_value?: string;
@@ -92,6 +93,7 @@ interface ClassTable {
 interface Build_data {
   id: number;
   data_name: string;
+  data_value: number | number[];
   data_address?: number;
   data_type?: DataType;
   data_min?: number;
@@ -100,49 +102,21 @@ interface Build_data {
   data_offset?: number;
   data_unit?: UNITTYPE;
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  data_bit_config?: BitConfig[];
-  data_value: number | number[];
+  data_bit_config?: BitConfig[] | null;
   data_word_length?: number;
 }
+interface Irregular_props {
+  data_name: string[];
+  data_type?: DataType[];
+  data_min?: number[];
+  data_max?: number[];
+  data_res?: RES[];
+  data_offset?: number[];
+  data_unit?: UNITTYPE[];
+  data_bit_config?: (BitConfig[] | null)[];
+  data_word_length?: number[];
+}
 // ---------- 生成工具 ----------
-// function getWordLengths(
-//   dataTypes: DataType[]
-// ) {
-
-//   return dataTypes.map(
-//     type => DATA_WORD_LENGTH[type]
-//   );
-
-// }
-/** 生成 n 个从 1 开始的类内序号 */
-// function seq(n: number): number[] {
-//   return Array.from({ length: n }, (_, i) => i + 1);
-// }
-
-/** 生成 n 个递增点名 */
-function names(prefix: string, n: number): string[] {
-  return Array.from({ length: n }, (_, i) => `${prefix}_${i + 1}`);
-}
-function names_system_summary(prefix: string): string[] {
-  return [
-    `${prefix}_第1大值`,
-    `${prefix}_第1大值编号`,
-    `${prefix}_第2大值`,
-    `${prefix}_第2大值编号`,
-    `${prefix}_第3大值`,
-    `${prefix}_第3大值编号`,
-    `${prefix}_第1小值`,
-    `${prefix}_第1小值编号`,
-    `${prefix}_第2小值`,
-    `${prefix}_第2小值编号`,
-    `${prefix}_第3小值`,
-    `${prefix}_第3小值编号`,
-    `${prefix}_平均值`,
-    `${prefix}_极差值`,
-    "预留",
-    "预留"
-  ];
-}
 
 // ---------- 地址长度容器 ----------
 
@@ -155,9 +129,15 @@ const ADDR_NUM_MAP = {
   cell: 4096,
   /** 系统汇总类 */
   system_summary: 144,
-  cluster_summary: /* 256 */ 125
+  cluster_summary: 256,
+  pack_summary: 768
 } as const;
-
+const ADDR_NUM_MAP_WITHOUT_RES = {
+  /** 系统汇总类 */
+  system_summary: 128,
+  cluster_summary: 125,
+  pack_summary: 614
+} as const;
 // ---------- 共享常量列方法 ----------
 
 /** 常量列缓存：以 `${value}:${n}` 为键，相同参数的调用共享同一数组引用 */
@@ -173,7 +153,10 @@ function column<T>(value: T, n: number): T[] {
   }
   return arr;
 }
-
+/** 生成 n 个递增点名 */
+function names(prefix: string, n: number): string[] {
+  return Array.from({ length: n }, (_, i) => `${prefix}_${i + 1}`);
+}
 /**
  * 共享常量列方法：同一方法可被多类复用，按需传入不同参数（如地址长度）
  * 相同 (value, n) 参数下，返回同一数组引用
@@ -181,6 +164,45 @@ function column<T>(value: T, n: number): T[] {
 const SHARE = {
   /** 任意值常量列（通用方法） */
   column,
+  names,
+  names_bmu(prefix: string, n: number): string[] {
+    return Array.from({ length: n }, (_, i) => `BMU${i + 1}-${prefix}`);
+  },
+  names_afe(prefix: string, n: number): string[] {
+    return Array.from({ length: n }, (_, i) => `afe${i + 1}-${prefix}`);
+  },
+  names_connectT(n: number): string[] {
+    return Array.from({ length: n }, (_, i) => [
+      `BMU${i + 1}-1号动力接插件温度`,
+      `BMU${i + 1}-2号动力接插件温度`
+    ]).flat();
+  },
+  names_bmuVersion(n: number): string[] {
+    return Array.from({ length: n }, (_, i) => [
+      `BMU${i + 1}-软件版本号`,
+      `BMU${i + 1}-BOOT版本号`
+    ]).flat();
+  },
+  names_system_summary(prefix: string): string[] {
+    return [
+      `${prefix}_第1大值`,
+      `${prefix}_第1大值编号`,
+      `${prefix}_第2大值`,
+      `${prefix}_第2大值编号`,
+      `${prefix}_第3大值`,
+      `${prefix}_第3大值编号`,
+      `${prefix}_第1小值`,
+      `${prefix}_第1小值编号`,
+      `${prefix}_第2小值`,
+      `${prefix}_第2小值编号`,
+      `${prefix}_第3小值`,
+      `${prefix}_第3小值编号`,
+      `${prefix}_平均值`,
+      `${prefix}_极差值`,
+      "预留",
+      "预留"
+    ];
+  },
   /** uint16 类型常量列 */
   uint16(num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
@@ -207,6 +229,12 @@ const SHARE = {
       data_word_length: length
     }));
   },
+  hex(length: number, num: number): DataTypeConfig[] {
+    return Array.from({ length: num }, () => ({
+      data_type: "hex",
+      data_word_length: length
+    }));
+  },
   bitfield(length: number, num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
       data_type: "bitfield",
@@ -225,8 +253,14 @@ const SHARE = {
   unit_v: (n: number): UNITTYPE[] => column("V", n),
   /** ℃ 单位常量列 */
   unit_temp: (n: number): UNITTYPE[] => column("℃", n),
+  unit_a: (n: number): UNITTYPE[] => column("A", n),
+  unit_kΩ: (n: number): UNITTYPE[] => column("kΩ", n),
   /** % 单位常量列 */
   unit_pct: (n: number): UNITTYPE[] => column("%", n),
+  unit_kW: (n: number): UNITTYPE[] => column("kW", n),
+  unit_kWh: (n: number): UNITTYPE[] => column("kWh", n),
+  unit_Ah: (n: number): UNITTYPE[] => column("Ah", n),
+  unit_kB: (n: number): UNITTYPE[] => column("kB", n),
   reserved: (n: number): string[] => column("预留", n),
   backslash: (n: number): string[] => column("/", n),
   max_65535: (n: number): number[] => column(65535, n),
@@ -242,6 +276,22 @@ const Data_type: Record<"uint16" | "int16", DataTypeConfig> = {
     data_word_length: 1
   }
 };
+function generate_BMU_version_datatype() {
+  const res: DataTypeConfig[] = [];
+  for (let i = 0; i < 64; i++) {
+    if (i % 2 == 0) {
+      res.push({
+        data_type: "hex",
+        data_word_length: 1
+      });
+    } else
+      res.push({
+        data_type: "ascii",
+        data_word_length: 1
+      });
+  }
+  return res;
+}
 // ---------- 点表 ----------
 const params_data_type = {
   system_summary: [
@@ -267,8 +317,8 @@ const params_data_type = {
       if (index % 2 == 0 && index <= 11) return Data_type.int16;
       if (index == 12 || index == 13) return Data_type.int16;
       else return Data_type.uint16;
-    }),
-    ...SHARE.uint16(16)
+    })
+    //...SHARE.uint16(16)
   ],
   cluster_summary: [
     ...SHARE.uint16(3),
@@ -292,23 +342,34 @@ const params_data_type = {
     ...SHARE.bitfield(1, 1),
     ...SHARE.uint32(3),
     ...SHARE.uint16(4),
-    ...SHARE.ascii(7, 9),
-    ...SHARE.uint16(131)
+    ...SHARE.ascii(7, 9)
+    //...SHARE.uint16(131)
+  ],
+  pack_summary: [
+    ...SHARE.bitfield(32, 1),
+    ...SHARE.uint16(36),
+    ...SHARE.int16(96),
+    ...generate_BMU_version_datatype(),
+    ...SHARE.uint16(32),
+    ...SHARE.hex(7, 32),
+    ...SHARE.int16(128),
+    ...SHARE.bitfield(2, 1)
+    //...SHARE.uint16(154)
   ]
 };
 /** system_summary 数据类型列：长度 144，各段定义按协议（字段无规律） */
-const params_irregular_props = {
+const params_irregular_props: Record<string, Irregular_props> = {
   system_summary: {
     data_name: [
-      ...names_system_summary("单体电压"),
-      ...names_system_summary("单体温度"),
-      ...names_system_summary("BMU电压"),
-      ...names_system_summary("BMU电路板温度"),
-      ...names_system_summary("单体SOC"),
-      ...names_system_summary("单体SOH"),
-      ...names_system_summary("动力接插件温度"),
-      ...names_system_summary("AFE铜排温度"),
-      ...SHARE.reserved(16)
+      ...SHARE.names_system_summary("单体电压"),
+      ...SHARE.names_system_summary("单体温度"),
+      ...SHARE.names_system_summary("BMU电压"),
+      ...SHARE.names_system_summary("BMU电路板温度"),
+      ...SHARE.names_system_summary("单体SOC"),
+      ...SHARE.names_system_summary("单体SOH"),
+      ...SHARE.names_system_summary("动力接插件温度"),
+      ...SHARE.names_system_summary("AFE铜排温度")
+      //...SHARE.reserved(16)
     ],
     data_type: params_data_type.system_summary.map(item => item.data_type),
     data_word_length: params_data_type.system_summary.map(
@@ -337,8 +398,8 @@ const params_irregular_props = {
         if (index % 2 == 0 && index <= 11) return -40;
         if (index == 12 || index == 13) return -40;
         else return 0;
-      }),
-      ...SHARE.zero(16)
+      })
+      //...SHARE.zero(16)
     ],
     data_max: [
       ...Array.from({ length: 16 }, (_, index) => {
@@ -380,8 +441,8 @@ const params_irregular_props = {
         if (index % 2 == 0 && index <= 11) return 125;
         if (index == 12 || index == 13) return 125;
         else return 65535;
-      }),
-      ...SHARE.max_65535(16)
+      })
+      // ...SHARE.max_65535(16)
     ],
     data_res: [
       ...SHARE.res_1(16),
@@ -419,8 +480,8 @@ const params_irregular_props = {
         if (index % 2 == 0 && index <= 11) return 0.1;
         if (index == 12 || index == 13) return 0.1;
         else return 1;
-      }),
-      ...SHARE.res_1(16)
+      })
+      // ...SHARE.res_1(16)
     ],
     data_unit: [
       ...Array.from({ length: 16 }, (_, index) => {
@@ -462,8 +523,8 @@ const params_irregular_props = {
         if (index % 2 == 0 && index <= 11) return "℃";
         if (index == 12 || index == 13) return "℃";
         else return "/";
-      }),
-      ...SHARE.backslash(16)
+      })
+      // ...SHARE.backslash(16)
     ] as UNITTYPE[]
   },
   cluster_summary: {
@@ -537,8 +598,8 @@ const params_irregular_props = {
       "BCU-BMU协议版本号",
       "BCU事件记录版本号",
       "BCU-sox算法版本号",
-      "可配置默认参数版本号",
-      ...SHARE.reserved(131)
+      "可配置默认参数版本号"
+      //...SHARE.reserved(131)
     ],
     data_type: params_data_type.cluster_summary.map(item => item.data_type),
     data_word_length: params_data_type.cluster_summary.map(
@@ -550,20 +611,21 @@ const params_irregular_props = {
       ...SHARE.res_1(2),
       ...SHARE.res_0_1(5),
       ...SHARE.res_1(3),
-      ...SHARE.res_0_1(3),
+      ...SHARE.res_0_1(3), //簇SOC
       ...SHARE.res_1(1),
       ...SHARE.res_0_1(1), //充电SOP
       ...SHARE.res_1(3),
       ...SHARE.res_0_1(1),
-      ...SHARE.res_1(2),
+      ...SHARE.res_1(2), //放电SOP-MAP表坐标行
       ...SHARE.res_0_1(2),
       ...SHARE.res_0_01(4),
       ...SHARE.res_0_1(1), //簇真实SOC
       ...SHARE.res_1(1),
-      ...SHARE.res_0_1(2), //簇真实SOC\
-      ...SHARE.res_1(153)
+      ...SHARE.res_0_1(2), //簇端动力接插件PCS测温差值
+      ...SHARE.res_1(22)
+      //...SHARE.res_1(153)
     ],
-    data_offset: SHARE.zero(192),
+    data_offset: /* SHARE.zero(192) */ SHARE.zero(61),
     data_bit_config: [
       ...SHARE.null(3),
       [
@@ -874,8 +936,127 @@ const params_irregular_props = {
           }
         }
       ],
-      ...SHARE.null(147)
-    ]
+      // ...SHARE.null(147)
+      ...SHARE.null(16)
+    ] as (BitConfig[] | null)[],
+    data_unit: [
+      ...SHARE.backslash(5),
+      ...SHARE.unit_v(2),
+      ...SHARE.unit_a(1),
+      ...SHARE.unit_kΩ(2),
+      ...SHARE.unit_temp(5),
+      ...SHARE.backslash(3),
+      ...SHARE.unit_pct(3),
+      ...SHARE.backslash(1),
+      ...SHARE.unit_pct(1),
+      ...SHARE.backslash(3),
+      ...SHARE.unit_pct(1),
+      ...SHARE.backslash(2),
+      ...SHARE.unit_kW(2),
+      ...SHARE.unit_kWh(2),
+      ...SHARE.unit_Ah(2),
+      ...SHARE.unit_pct(1),
+      ...SHARE.backslash(1),
+      ...SHARE.unit_temp(2),
+      ...SHARE.backslash(6),
+      ...SHARE.unit_kB(3),
+      //...SHARE.backslash(144)
+      ...SHARE.backslash(13)
+    ] as UNITTYPE[]
+  },
+  pack_summary: {
+    data_name: [
+      "单向菊花链断连位置",
+      "BMU失联数量",
+      "AFE失联数量",
+      "电芯电压断线数量",
+      "电芯温度断线数量",
+      ...SHARE.names_bmu("BMU电压", 32),
+      ...SHARE.names_bmu("BMU电路板温度", 32),
+      ...SHARE.names_connectT(32),
+      ...SHARE.names_bmuVersion(32),
+      ...SHARE.names_bmu("BMU-SOC", 32),
+      ...SHARE.names_bmu("BMU产品编码", 32),
+      ...SHARE.names_afe("铜牌温度", 128),
+      "BMU重启标志"
+      //...SHARE.reserved(154)
+    ],
+    data_type: params_data_type.pack_summary.map(item => item.data_type),
+    data_word_length: params_data_type.pack_summary.map(
+      item => item.data_word_length
+    ),
+    data_bit_config: [
+      Array.from({ length: 32 }, (_, idex) => {
+        return [
+          {
+            reg_idx: 0,
+            bit_offset: 0,
+            bit_length: 8,
+            bit_name: `BMU${idex + 1}断联位置-正向`,
+            bit_value: true,
+            bit_value_type: "bit"
+          },
+          {
+            reg_idx: 0,
+            bit_offset: 8,
+            bit_length: 8,
+            bit_name: `BMU${idex + 1}断联位置-反向`,
+            bit_value: true,
+            bit_value_type: "bit"
+          }
+        ];
+      }).flat(),
+      ...SHARE.null(388),
+      [
+        ...Array.from({ length: 16 }, (_, index) => {
+          return {
+            reg_idx: 0,
+            bit_offset: 0,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}重启标志`,
+            bit_mapping: {
+              0: "重启初始化完成",
+              1: "重启初始化中"
+            }
+          };
+        }),
+        ...Array.from({ length: 16 }, (_, index) => {
+          return {
+            reg_idx: 1,
+            bit_offset: 0,
+            bit_length: 1,
+            bit_name: `BMU${index + 17}重启标志`,
+            bit_mapping: {
+              0: "重启初始化完成",
+              1: "重启初始化中"
+            }
+          };
+        })
+      ].flat()
+      //...SHARE.null(154)
+    ],
+    data_res: [
+      ...SHARE.res_1(5),
+      ...SHARE.res_0_1(128),
+      ...SHARE.res_1(64),
+      ...SHARE.res_0_1(32),
+      ...SHARE.res_1(32),
+      ...SHARE.res_0_1(128),
+      ...SHARE.res_1(1)
+      //...SHARE.res_1(155)
+    ],
+    data_offset: /* SHARE.zero(544) */ SHARE.zero(390),
+    data_unit: [
+      ...SHARE.backslash(5),
+      ...SHARE.unit_v(32),
+      ...SHARE.unit_temp(96),
+      ...SHARE.backslash(64),
+      ...SHARE.unit_pct(32),
+      ...SHARE.backslash(32),
+      ...SHARE.unit_temp(128),
+      ...SHARE.backslash(1)
+      /*    ...SHARE.backslash(155) */
+    ] as UNITTYPE[]
   }
 };
 
@@ -904,7 +1085,7 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_min: params_irregular_props.system_summary.data_min,
     data_max: params_irregular_props.system_summary.data_max,
     data_res: params_irregular_props.system_summary.data_res,
-    data_offset: SHARE.zero(ADDR_NUM_MAP.system_summary),
+    data_offset: SHARE.zero(ADDR_NUM_MAP_WITHOUT_RES.system_summary),
     data_unit: params_irregular_props.system_summary.data_unit,
     data_word_length: params_irregular_props.system_summary.data_word_length
   },
@@ -914,7 +1095,17 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_res: params_irregular_props.cluster_summary.data_res,
     data_offset: params_irregular_props.cluster_summary.data_offset,
     data_word_length: params_irregular_props.cluster_summary.data_word_length,
-    data_bit_config: params_irregular_props.cluster_summary.data_bit_config
+    data_bit_config: params_irregular_props.cluster_summary.data_bit_config,
+    data_unit: params_irregular_props.cluster_summary.data_unit
+  },
+  pack_summary: {
+    data_name: params_irregular_props.pack_summary.data_name,
+    data_type: params_irregular_props.pack_summary.data_type,
+    data_res: params_irregular_props.pack_summary.data_res,
+    data_offset: params_irregular_props.pack_summary.data_offset,
+    data_word_length: params_irregular_props.pack_summary.data_word_length,
+    data_bit_config: params_irregular_props.pack_summary.data_bit_config,
+    data_unit: params_irregular_props.pack_summary.data_unit
   }
 };
 
@@ -924,7 +1115,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_vltg: {
     class: "cell_vltg",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x0000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -940,7 +1130,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_temp: {
     class: "cell_temp",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x1000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -956,7 +1145,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_soc: {
     class: "cell_soc",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x2000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -971,7 +1159,6 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_soh: {
     class: "cell_soh",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x3000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -986,26 +1173,31 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   system_summary: {
     class: "system_summary",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x4000,
-    addr_num: ADDR_NUM_MAP.system_summary,
+    addr_num: ADDR_NUM_MAP_WITHOUT_RES.system_summary,
     data_invalid_value: "0x7FFF",
     data_props: params_propMap.system_summary
   },
   cluster_summary: {
     class: "cluster_summary",
     isClusterParm: true,
-    isBlockParm: false,
     addr_start: 0x4100,
-    addr_num: ADDR_NUM_MAP.cluster_summary,
+    addr_num: ADDR_NUM_MAP_WITHOUT_RES.cluster_summary,
     data_invalid_value: "0x7FFF",
     data_props: params_propMap.cluster_summary
+  },
+  pack_summary: {
+    class: "pack_summary",
+    isClusterParm: true,
+    addr_start: 0x4200,
+    addr_num: ADDR_NUM_MAP_WITHOUT_RES.pack_summary,
+    data_props: params_propMap.pack_summary
   }
 };
 
 // ---------- 开发期校验 ----------
 
-const POINT_COLUMNS: (keyof PointTable)[] = [
+const PARAM_COLUMNS: (keyof PointTable)[] = [
   "id",
   "data_name",
   "data_type",
@@ -1013,90 +1205,167 @@ const POINT_COLUMNS: (keyof PointTable)[] = [
   "data_max",
   "data_res",
   "data_offset",
-  "data_unit"
+  "data_unit",
+  "data_word_length",
+  "data_bit_config"
 ];
-const class_which_data_propsInside = [
-  "cell_vltg",
-  "cell_temp",
-  "cell_soc",
-  "cell_soh"
-];
-/** 校验各列长度必须与 addr_num 一致，防止列错位 */
+const cell_class = ["cell_vltg", "cell_temp", "cell_soc", "cell_soh"];
+
+/** 计算某类点表的寄存器总数：Σ data_word_length（缺省 1） */
+function totalRegisters(cls: ClassTable): number {
+  const props = cls.data_props;
+  const paramNum = props.data_name.length;
+  const wordLengths = props.data_word_length;
+  if (!wordLengths) return paramNum; //cell_class直接返回data_name长度
+  let total = 0;
+  for (let i = 0; i < paramNum; i++) total += wordLengths[i] ?? 1; //其余则计算wordLengths总长度
+  return total;
+}
+
+/**
+ * 点表完整性校验（worker 启动时调用，失败直接 throw）：
+ * 1. 参数个数校验：同类下所有已定义列长度一致（等于该类参数个数）
+ * 2. 寄存器个数校验：Σ data_word_length（缺省 1）=== addr_num
+ */
 function assertColumnLength(): void {
   for (const [name, cls] of Object.entries(classes_fieldsMap)) {
-    for (const col of POINT_COLUMNS) {
+    // 1. 参数个数校验：已定义列长度必须一致
+    let paramNum: number | undefined;
+    for (const col of PARAM_COLUMNS) {
       const arr = cls.data_props[col];
-      if (arr !== undefined && arr?.length !== cls.addr_num && arr !== null) {
+      if (!Array.isArray(arr)) continue;
+      if (paramNum === undefined) {
+        paramNum = arr.length;
+      } else if (arr.length !== paramNum) {
         throw new Error(
-          `[点表] ${name}.${col} 长度(${arr.length})与 addr_num(${cls.addr_num}) 不一致`
+          `[点表] ${name}.${col} 长度(${arr.length})与该类参数个数(${paramNum})不一致`
         );
-      }
+      } else
+        console.log(
+          `[点表] ${name}.${col} 长度(${arr.length})与该类参数个数(${paramNum})一致`
+        );
     }
+    // 2. 寄存器个数校验
+    const regTotal = totalRegisters(cls);
+    if (regTotal !== cls.addr_num) {
+      throw new Error(
+        `[点表] ${name} 寄存器总数(${regTotal})与 addr_num(${cls.addr_num})不一致`
+      );
+    } else
+      console.log(
+        `[点表] ${name} 寄存器总数(${regTotal})与 addr_num(${cls.addr_num})一致`
+      );
   }
 }
-function build_data(data: number[], cls: ClassTable) {
-  const data_build: Build_data[] = [];
 
-  let dataIndex = 0; // 原始寄存器索引
+// ---------- 静态模板缓存 ----------
 
-  let paramIndex = 0; // 参数索引
-  if (class_which_data_propsInside.includes(cls.class)) {
-    return data.map((item, index) => {
-      return {
-        id: index + 1,
-        data_name: cls.data_props.data_name[index],
-        data_value: item,
-        data_address: cls.addr_start + index,
-        data_type: cls.data_type,
-        data_res: cls.data_res,
-        data_offset: cls.data_offset,
-        data_word_length: cls.data_props.data_word_length?.[index],
-        data_bit_config: cls.data_props.data_bit_config?.[index]
-      };
-    });
-  } else {
-    while (dataIndex < data.length) {
-      const wordLength = cls.data_props.data_word_length?.[paramIndex] ?? 1;
+/**
+ * 每类点表的静态构建模板：
+ * 点表中除 data_value 外所有字段（id/name/address/type/res/offset/unit/bit_config）
+ * 均为静态，只在首次构建时计算一次；slices 记录每个参数的寄存器切片位置。
+ */
+interface BuildTemplate {
+  /** 静态字段模板（data_value 为占位，轮询时原地覆写） */
+  statics: Build_data[];
+  /** 每个参数在原始寄存器数组中的切片位置 */
+  slices: { start: number; length: number }[];
+  /** 该类期望的寄存器总数（= addr_num） */
+  regTotal: number;
+  /** 是否单体类（参数与寄存器 1:1，支持按配置数量部分读取） */
+  isCellLike: boolean;
+}
 
-      let rawValue: number | number[];
+const templateCache = new WeakMap<ClassTable, BuildTemplate>();
 
-      if (wordLength === 1) {
-        rawValue = data[dataIndex];
-      } else {
-        rawValue = data.slice(dataIndex, dataIndex + wordLength);
-      }
+function getTemplate(cls: ClassTable): BuildTemplate {
+  let tpl = templateCache.get(cls);
+  if (tpl) return tpl;
 
-      data_build.push({
-        id: paramIndex + 1,
+  const props = cls.data_props;
+  const isCellLike = cell_class.includes(cls.class);
+  const paramNum = props.data_name.length;
+  const statics: Build_data[] = new Array(paramNum);
+  const slices: BuildTemplate["slices"] = new Array(paramNum);
 
-        data_name: cls.data_props.data_name[paramIndex],
-
-        data_address: cls.addr_start + dataIndex,
-
-        data_value: rawValue,
-
-        data_type: cls.data_props.data_type?.[paramIndex],
-
-        data_res: cls.data_props.data_res?.[paramIndex],
-
-        data_offset: cls.data_props.data_offset?.[paramIndex],
-        data_word_length: cls.data_props.data_word_length?.[paramIndex],
-        data_bit_config: cls.data_props.data_bit_config?.[paramIndex]
-      });
-
-      dataIndex += wordLength;
-
-      paramIndex++;
-    }
-
-    return data_build;
+  let dataIndex = 0; // 寄存器索引
+  for (let i = 0; i < paramNum; i++) {
+    const wordLength = props.data_word_length?.[i] ?? 1;
+    statics[i] = isCellLike
+      ? {
+          id: i + 1,
+          data_name: props.data_name[i],
+          data_address: cls.addr_start + i,
+          data_type: cls.data_type,
+          data_res: cls.data_res,
+          data_offset: cls.data_offset,
+          data_word_length: props.data_word_length?.[i],
+          data_bit_config: props.data_bit_config?.[i],
+          data_unit: cls.data_unit,
+          data_value: 0
+        }
+      : {
+          id: i + 1,
+          data_name: props.data_name[i],
+          data_address: cls.addr_start + dataIndex,
+          data_type: props.data_type?.[i],
+          data_res: props.data_res?.[i],
+          data_offset: props.data_offset?.[i],
+          data_word_length: props.data_word_length?.[i],
+          data_bit_config: props.data_bit_config?.[i],
+          data_unit: props.data_unit?.[i],
+          data_value: 0
+        };
+    slices[i] = { start: dataIndex, length: wordLength };
+    dataIndex += wordLength;
   }
+
+  tpl = { statics, slices, regTotal: dataIndex, isCellLike };
+  templateCache.set(cls, tpl);
+  return tpl;
+}
+
+/**
+ * 构建解析数据：静态字段复用模板对象，仅覆写 data_value，轮询零静态分配。
+ *
+ * 注意：返回数组中的对象为缓存模板的复用引用，调用方不应跨轮询周期持有；
+ * 当前消费链（parse_raw_data 展开为新对象 → process.send 同步序列化）安全。
+ */
+function build_data(data: number[], cls: ClassTable): Build_data[] {
+  const tpl = getTemplate(cls);
+
+  if (tpl.isCellLike) {
+    if (data.length > tpl.statics.length) {
+      throw new Error(
+        `[点表] ${cls.class} 读取寄存器数(${data.length})超过该类参数个数(${tpl.statics.length})`
+      );
+    }
+    return data.map((value, i) => {
+      const item = tpl.statics[i];
+      item.data_value = value;
+      return item;
+    });
+  }
+
+  if (data.length !== tpl.regTotal) {
+    throw new Error(
+      `[点表] ${cls.class} 读取寄存器数(${data.length})与点表寄存器总数(${tpl.regTotal})不一致，可能存在通讯异常`
+    );
+  }
+  return tpl.statics.map((item, i) => {
+    const { start, length } = tpl.slices[i];
+    item.data_value =
+      length === 1 ? data[start] : data.slice(start, start + length);
+    return item;
+  });
 }
 export {
   assertColumnLength,
   classes_fieldsMap,
-  class_which_data_propsInside,
-  build_data
+  cell_class,
+  build_data,
+  SHARE,
+  ADDR_NUM_MAP_WITHOUT_RES
 };
 export type {
   DataType,

@@ -20,6 +20,10 @@ export function useColumns() {
     {
       label: "值",
       prop: "data_parsed"
+    },
+    {
+      label: "单位",
+      prop: "data_unit"
     }
     // {
     //   label: "地址",

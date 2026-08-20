@@ -33,10 +33,10 @@ export function useColumns() {
       label: "寄存器数量",
       prop: "data_word_length"
     },
-    {
-      label: "bit配置",
-      prop: "data_bit_config"
-    }
+    // {
+    //   label: "bit配置",
+    //   prop: "data_bit_config"
+    // }
     // {
     //   label: "最小值",
     //   prop: "data_min"
@@ -45,10 +45,10 @@ export function useColumns() {
     //   label: "最大值",
     //   prop: "data_max"
     // },
-    // {
-    //   label: "单位",
-    //   prop: "data_unit"
-    // }
+    {
+      label: "单位",
+      prop: "data_unit"
+    }
   ];
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({

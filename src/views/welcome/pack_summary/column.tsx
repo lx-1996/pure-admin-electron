@@ -22,6 +22,30 @@ export function useColumns() {
       prop: "data_parsed"
     },
     {
+      label: "地址",
+      prop: "data_address"
+    },
+    {
+      label: "数据类型",
+      prop: "data_type"
+    },
+    {
+      label: "寄存器数量",
+      prop: "data_word_length"
+    },
+    // {
+    //   label: "bit配置",
+    //   prop: "data_bit_config"
+    // }
+    // {
+    //   label: "最小值",
+    //   prop: "data_min"
+    // },
+    // {
+    //   label: "最大值",
+    //   prop: "data_max"
+    // },
+    {
       label: "单位",
       prop: "data_unit"
     }
@@ -58,10 +82,10 @@ export function useColumns() {
     /** 表格距离页面底部的偏移量，默认值为 `96` */
     offsetBottom: 110
     /** 是否固定表头，默认值为 `true`（如果不想固定表头，fixHeader设置为false并且表格要设置table-layout="auto"） */
-    // fixHeader: true,
-    // /** 页面 `resize` 时的防抖时间，默认值为 `60` ms */
-    // timeout: 60,
-    // /** 表头的 `z-index`，默认值为 `100` */
+    // fixHeader: true
+    /** 页面 `resize` 时的防抖时间，默认值为 `60` ms */
+    // timeout: 60
+    /** 表头的 `z-index`，默认值为 `100` */
     // zIndex: 100
   };
   function onCurrentChange(val) {
@@ -77,14 +101,14 @@ export function useColumns() {
   let listenerId: number | null = null;
 
   function onData(_event: any, value: any) {
-    //console.log("cell_vltg");
+    //console.log("system_summary");
     data.value = Array.isArray(value) ? value : [];
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
   }
   onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("cell_vltg", onData);
+    listenerId = window.ipcRenderer.on("pack_summary", onData);
   });
 
   onBeforeUnmount(() => {
