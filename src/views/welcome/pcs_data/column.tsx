@@ -101,14 +101,14 @@ export function useColumns() {
   let listenerId: number | null = null;
 
   function onData(_event: any, value: any) {
-    console.log(value);
+    //console.log(value);
     data.value = Array.isArray(value) ? value : [];
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
   }
   onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("pack_summary", onData);
+    listenerId = window.ipcRenderer.on("pcs_data", onData);
   });
 
   onBeforeUnmount(() => {

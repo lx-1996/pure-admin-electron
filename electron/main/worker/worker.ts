@@ -44,6 +44,10 @@ async function start() {
       await readData(modbusTCPClient, "system_summary");
       await readData(modbusTCPClient, "cluster_summary");
       await readData(modbusTCPClient, "pack_summary");
+      await readData(modbusTCPClient, "pcs_data");
+      await readData(modbusTCPClient, "cooler_data");
+      await readData(modbusTCPClient, "dehumidifier_data");
+      await readData(modbusTCPClient, "firefighting_data");
       // console.log(cluster_summary);
     } catch (e) {
       console.error(e);

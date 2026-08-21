@@ -17,7 +17,11 @@ type ClassType =
   | "cell_soh"
   | "system_summary"
   | "cluster_summary"
-  | "pack_summary";
+  | "pack_summary"
+  | "pcs_data"
+  | "cooler_data"
+  | "dehumidifier_data"
+  | "firefighting_data";
 /** 寄存器数据类型 */
 type DataType =
   | "uint16"
@@ -26,7 +30,9 @@ type DataType =
   | "float"
   | "ascii"
   | "bitfield"
-  | "hex";
+  | "hex"
+  | "uint16_regs"
+  | "int16_regs";
 
 interface DataTypeConfig {
   data_type: DataType;
@@ -45,13 +51,22 @@ type UNITTYPE =
   | "Ah"
   | "kB";
 type RES = 1 | 0.1 | 0.01 | 0.001;
+type BIT_VALUE_TYPE =
+  | "bit_value"
+  | "bit_mapping"
+  | "reg_value"
+  | "reg_mapping"
+  | "reg_value_hex"
+  | "reg_value_ascii";
 interface BitConfig {
   reg_idx: number;
-  bit_offset: number;
-  bit_length: number;
+  reg_length?: number;
+  bit_offset?: number;
+  bit_length?: number;
   bit_name?: string;
   bit_value?: boolean;
-  bit_value_type?: string;
+  bit_value_type?: BIT_VALUE_TYPE;
+  reg_type?: "uint16" | "int16" | "uint32" | "float";
   bit_mapping?: Record<number, string>;
 }
 /** 单类点表（列式结构） */
@@ -130,7 +145,11 @@ const ADDR_NUM_MAP = {
   /** 系统汇总类 */
   system_summary: 144,
   cluster_summary: 256,
-  pack_summary: 768
+  pack_summary: 768,
+  pcs_data: 125,
+  cooler_data: 125,
+  dehumidifier_data: 125,
+  firefighting_data: 125
 } as const;
 const ADDR_NUM_MAP_WITHOUT_RES = {
   /** 系统汇总类 */
@@ -223,21 +242,27 @@ const SHARE = {
       data_word_length: 2
     }));
   },
-  ascii(length: number, num: number): DataTypeConfig[] {
+  uint16_regs(length: number, num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
-      data_type: "ascii",
+      data_type: "uint16_regs",
       data_word_length: length
     }));
   },
-  hex(length: number, num: number): DataTypeConfig[] {
+  int16_regs(length: number, num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
-      data_type: "hex",
+      data_type: "int16_regs",
       data_word_length: length
     }));
   },
   bitfield(length: number, num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
       data_type: "bitfield",
+      data_word_length: length
+    }));
+  },
+  ascii(length: number, num: number): DataTypeConfig[] {
+    return Array.from({ length: num }, () => ({
+      data_type: "ascii",
       data_word_length: length
     }));
   },
@@ -276,22 +301,6 @@ const Data_type: Record<"uint16" | "int16", DataTypeConfig> = {
     data_word_length: 1
   }
 };
-function generate_BMU_version_datatype() {
-  const res: DataTypeConfig[] = [];
-  for (let i = 0; i < 64; i++) {
-    if (i % 2 == 0) {
-      res.push({
-        data_type: "hex",
-        data_word_length: 1
-      });
-    } else
-      res.push({
-        data_type: "ascii",
-        data_word_length: 1
-      });
-  }
-  return res;
-}
 // ---------- 点表 ----------
 const params_data_type = {
   system_summary: [
@@ -347,12 +356,14 @@ const params_data_type = {
   ],
   pack_summary: [
     ...SHARE.bitfield(32, 1),
-    ...SHARE.uint16(36),
-    ...SHARE.int16(96),
-    ...generate_BMU_version_datatype(),
-    ...SHARE.uint16(32),
-    ...SHARE.hex(7, 32),
-    ...SHARE.int16(128),
+    ...SHARE.uint16(4),
+    ...SHARE.bitfield(32, 1),
+    ...SHARE.bitfield(32, 1),
+    ...SHARE.bitfield(64, 1),
+    ...SHARE.bitfield(64, 1),
+    ...SHARE.bitfield(32, 1),
+    ...SHARE.bitfield(224, 1),
+    ...SHARE.bitfield(128, 1),
     ...SHARE.bitfield(2, 1)
     //...SHARE.uint16(154)
   ]
@@ -633,6 +644,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 16,
+          bit_value_type: "reg_mapping",
           bit_mapping: {
             0: "静置",
             1: "充电",
@@ -647,6 +659,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 16,
+          bit_value_type: "reg_mapping",
           bit_mapping: {
             0: "无故障",
             1: "严重故障",
@@ -662,6 +675,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 1,
           bit_name: "静置状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未静置",
             1: "静置"
@@ -672,6 +686,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 1,
           bit_length: 1,
           bit_name: "充电状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未充电",
             1: "充电"
@@ -682,6 +697,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 2,
           bit_length: 1,
           bit_name: "放电状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未放电",
             1: "放电"
@@ -692,6 +708,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 3,
           bit_length: 1,
           bit_name: "禁充状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未禁充",
             1: "禁充"
@@ -702,6 +719,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 4,
           bit_length: 1,
           bit_name: "禁放状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未禁放",
             1: "禁放"
@@ -712,6 +730,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 5,
           bit_length: 1,
           bit_name: "禁充禁放",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未禁充禁放",
             1: "禁充禁放"
@@ -722,6 +741,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 6,
           bit_length: 1,
           bit_name: "告警状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未告警",
             1: "告警"
@@ -732,6 +752,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 7,
           bit_length: 1,
           bit_name: "故障状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未故障",
             1: "故障"
@@ -742,6 +763,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 8,
           bit_length: 1,
           bit_name: "充电功率锁存状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未充电功率锁存中",
             1: "充电功率锁存中"
@@ -752,6 +774,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 9,
           bit_length: 1,
           bit_name: "放电功率锁存状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未放电功率锁存中",
             1: "放电功率锁存中"
@@ -762,6 +785,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 10,
           bit_length: 1,
           bit_name: "充电指令",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未接收到充电指令",
             1: "接收到充电指令"
@@ -772,6 +796,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 11,
           bit_length: 1,
           bit_name: "充电指令完成状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "充电闭合未完成",
             1: "充电闭合完成"
@@ -782,6 +807,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 12,
           bit_length: 1,
           bit_name: "放电指令",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未接收到放电指令",
             1: "接收到放电指令"
@@ -792,6 +818,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 13,
           bit_length: 1,
           bit_name: "放电指令完成状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "放电闭合未完成",
             1: "放电闭合完成"
@@ -802,6 +829,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 14,
           bit_length: 1,
           bit_name: "脱离母线指令",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未接收到脱离母线指令",
             1: "接收到脱离母线指令"
@@ -812,6 +840,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 15,
           bit_length: 1,
           bit_name: "脱离母线指令完成状态",
+          bit_value_type: "bit",
           bit_mapping: {
             0: "断开接触器未完成",
             1: "断开接触器完成"
@@ -822,6 +851,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 1,
           bit_name: "运维模式",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "非运维模式",
             1: "运维模式"
@@ -832,6 +862,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 1,
           bit_length: 1,
           bit_name: "测试模式",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "正常模式",
             1: "测试模式"
@@ -842,6 +873,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 2,
           bit_length: 1,
           bit_name: "初始化状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "初始化完成",
             1: "正在初始化"
@@ -854,6 +886,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 2,
           bit_name: "高压允许闭合状态",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "初始状态",
             1: "不允许闭合高压",
@@ -862,9 +895,10 @@ const params_irregular_props: Record<string, Irregular_props> = {
         },
         {
           reg_idx: 0,
-          bit_offset: 0,
+          bit_offset: 2,
           bit_length: 2,
           bit_name: "分励脱扣动作",
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "初始状态",
             1: "未执行脱扣动作",
@@ -878,6 +912,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 16,
+          bit_value_type: "reg_mapping",
           bit_mapping: {
             0x5bb5: "有效",
             0x1221: "无效"
@@ -890,6 +925,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 16,
+          bit_value_type: "reg_mapping",
           bit_mapping: {
             0x5bb5: "有效",
             0x1221: "无效"
@@ -902,6 +938,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 1,
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "无故障",
             1: "有故障"
@@ -911,6 +948,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 1,
           bit_length: 7,
+          bit_value_type: "bit_mapping",
           bit_mapping: {
             1: "存储错误",
             2: "过流检测",
@@ -928,16 +966,17 @@ const params_irregular_props: Record<string, Irregular_props> = {
       [
         {
           reg_idx: 0,
-          bit_offset: 1,
+          bit_offset: 0,
           bit_length: 16,
+          bit_value_type: "reg_mapping",
           bit_mapping: {
             0: "系统正常",
             1: "系统重启"
           }
         }
       ],
-      // ...SHARE.null(147)
       ...SHARE.null(16)
+      // ...SHARE.null(147)
     ] as (BitConfig[] | null)[],
     data_unit: [
       ...SHARE.backslash(5),
@@ -971,13 +1010,13 @@ const params_irregular_props: Record<string, Irregular_props> = {
       "AFE失联数量",
       "电芯电压断线数量",
       "电芯温度断线数量",
-      ...SHARE.names_bmu("BMU电压", 32),
-      ...SHARE.names_bmu("BMU电路板温度", 32),
-      ...SHARE.names_connectT(32),
-      ...SHARE.names_bmuVersion(32),
-      ...SHARE.names_bmu("BMU-SOC", 32),
-      ...SHARE.names_bmu("BMU产品编码", 32),
-      ...SHARE.names_afe("铜牌温度", 128),
+      "BMU电压",
+      "BMU电路板温度",
+      "BMU动力接插件温度",
+      "BMU版本号",
+      "BMU-SOC",
+      "BMU产品编码",
+      "铜牌温度",
       "BMU重启标志"
       //...SHARE.reserved(154)
     ],
@@ -986,46 +1025,115 @@ const params_irregular_props: Record<string, Irregular_props> = {
       item => item.data_word_length
     ),
     data_bit_config: [
-      Array.from({ length: 32 }, (_, idex) => {
+      Array.from({ length: 32 }, (_, idex): BitConfig[] => {
         return [
           {
-            reg_idx: 0,
+            reg_idx: idex,
             bit_offset: 0,
             bit_length: 8,
             bit_name: `BMU${idex + 1}断联位置-正向`,
-            bit_value: true,
-            bit_value_type: "bit"
+            bit_value_type: "bit_value"
           },
           {
-            reg_idx: 0,
+            reg_idx: idex,
             bit_offset: 8,
             bit_length: 8,
             bit_name: `BMU${idex + 1}断联位置-反向`,
-            bit_value: true,
-            bit_value_type: "bit"
+            bit_value_type: "bit_value"
           }
         ];
       }).flat(),
-      ...SHARE.null(388),
+      ...SHARE.null(4),
+      Array.from({ length: 32 }, (_, index) => {
+        return {
+          reg_idx: index,
+          bit_name: `BMU${index + 1}电压`,
+          reg_type: "uint16",
+          bit_value_type: "reg_value"
+        };
+      }),
+      Array.from({ length: 32 }, (_, index) => {
+        return {
+          reg_idx: index,
+          bit_name: `BMU${index + 1}电路板温度`,
+          reg_type: "int16",
+          bit_value_type: "reg_value"
+        };
+      }),
+      SHARE.names_connectT(32).map((item, index) => {
+        return {
+          reg_idx: index,
+          bit_name: item,
+          reg_type: "int16",
+          bit_value_type: "reg_value"
+        };
+      }),
+      SHARE.names_bmuVersion(32).map((item, index) => {
+        if (index % 2 == 0) {
+          return {
+            reg_idx: index,
+            bit_name: item,
+            bit_value_type: "reg_value_hex"
+          };
+        }
+        return {
+          reg_idx: index,
+          bit_name: item,
+          bit_value_type: "reg_value_ascii"
+        };
+      }),
+      Array.from({ length: 32 }, (_, index) => {
+        return {
+          reg_idx: index,
+          bit_offset: 0,
+          bit_length: 16,
+          reg_type: "uint16",
+          bit_name: `BMU${index + 1}SOC`,
+          bit_value_type: "reg_value"
+        };
+      }),
       [
-        ...Array.from({ length: 16 }, (_, index) => {
+        ...Array.from({ length: 32 }, (_, index): BitConfig => {
+          return {
+            reg_idx: index * 7,
+            reg_length: 7,
+            bit_name: `BMU${index + 1}产品编码`,
+            bit_value_type: "reg_value_hex"
+          };
+        })
+      ],
+      Array.from({ length: 128 }, (_, index) => {
+        return {
+          reg_idx: index,
+          bit_offset: 0,
+          bit_length: 16,
+          reg_type: "int16",
+          bit_name: `AFE${index + 1}铜牌温度`,
+          bit_value_type: "reg_value"
+        };
+      }),
+      //...SHARE.null(388),
+      [
+        ...Array.from({ length: 16 }, (_, index): BitConfig => {
           return {
             reg_idx: 0,
             bit_offset: 0,
             bit_length: 1,
             bit_name: `BMU${index + 1}重启标志`,
+            bit_value_type: "bit_mapping",
             bit_mapping: {
               0: "重启初始化完成",
               1: "重启初始化中"
             }
           };
         }),
-        ...Array.from({ length: 16 }, (_, index) => {
+        ...Array.from({ length: 16 }, (_, index): BitConfig => {
           return {
             reg_idx: 1,
             bit_offset: 0,
             bit_length: 1,
             bit_name: `BMU${index + 17}重启标志`,
+            bit_value_type: "bit_mapping",
             bit_mapping: {
               0: "重启初始化完成",
               1: "重启初始化中"
@@ -1037,23 +1145,23 @@ const params_irregular_props: Record<string, Irregular_props> = {
     ],
     data_res: [
       ...SHARE.res_1(5),
-      ...SHARE.res_0_1(128),
-      ...SHARE.res_1(64),
-      ...SHARE.res_0_1(32),
-      ...SHARE.res_1(32),
-      ...SHARE.res_0_1(128),
-      ...SHARE.res_1(1)
+      ...SHARE.res_0_1(3),
+      ...SHARE.res_1(1), //BMU版本号
+      ...SHARE.res_0_1(1), //BMU SOC
+      ...SHARE.res_1(1), //BMU产品编码
+      ...SHARE.res_0_1(1), //铜牌温度
+      ...SHARE.res_1(1) //BMU重启标志
       //...SHARE.res_1(155)
     ],
-    data_offset: /* SHARE.zero(544) */ SHARE.zero(390),
+    data_offset: /* SHARE.zero(544) */ SHARE.zero(13),
     data_unit: [
       ...SHARE.backslash(5),
-      ...SHARE.unit_v(32),
-      ...SHARE.unit_temp(96),
-      ...SHARE.backslash(64),
-      ...SHARE.unit_pct(32),
-      ...SHARE.backslash(32),
-      ...SHARE.unit_temp(128),
+      ...SHARE.unit_v(1),
+      ...SHARE.unit_temp(2),
+      ...SHARE.backslash(1),
+      ...SHARE.unit_pct(1),
+      ...SHARE.backslash(1),
+      ...SHARE.unit_temp(1),
       ...SHARE.backslash(1)
       /*    ...SHARE.backslash(155) */
     ] as UNITTYPE[]
@@ -1106,6 +1214,18 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_word_length: params_irregular_props.pack_summary.data_word_length,
     data_bit_config: params_irregular_props.pack_summary.data_bit_config,
     data_unit: params_irregular_props.pack_summary.data_unit
+  },
+  pcs_data: {
+    data_name: names("pcs_param", ADDR_NUM_MAP.pcs_data)
+  },
+  cooler_data: {
+    data_name: names("cooler_param", ADDR_NUM_MAP.cooler_data)
+  },
+  dehumidifier_data: {
+    data_name: names("dehumidifier_param", ADDR_NUM_MAP.dehumidifier_data)
+  },
+  firefighting_data: {
+    data_name: names("firefighting_param", ADDR_NUM_MAP.firefighting_data)
   }
 };
 
@@ -1192,6 +1312,58 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     addr_start: 0x4200,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.pack_summary,
     data_props: params_propMap.pack_summary
+  },
+  pcs_data: {
+    class: "pcs_data",
+    isClusterParm: true,
+    addr_start: 0x4500,
+    addr_num: ADDR_NUM_MAP.pcs_data,
+    data_type: "uint16",
+    data_min: 0,
+    data_max: 65535,
+    data_res: 1,
+    data_offset: 0,
+    data_unit: "/",
+    data_props: params_propMap.pcs_data
+  },
+  cooler_data: {
+    class: "cooler_data",
+    isClusterParm: true,
+    addr_start: 0x4500,
+    addr_num: ADDR_NUM_MAP.cooler_data,
+    data_type: "uint16",
+    data_min: 0,
+    data_max: 65535,
+    data_res: 1,
+    data_offset: 0,
+    data_unit: "/",
+    data_props: params_propMap.cooler_data
+  },
+  dehumidifier_data: {
+    class: "dehumidifier_data",
+    isClusterParm: true,
+    addr_start: 0x4500,
+    addr_num: ADDR_NUM_MAP.dehumidifier_data,
+    data_type: "uint16",
+    data_min: 0,
+    data_max: 65535,
+    data_res: 1,
+    data_offset: 0,
+    data_unit: "/",
+    data_props: params_propMap.dehumidifier_data
+  },
+  firefighting_data: {
+    class: "firefighting_data",
+    isClusterParm: true,
+    addr_start: 0x4500,
+    addr_num: ADDR_NUM_MAP.firefighting_data,
+    data_type: "uint16",
+    data_min: 0,
+    data_max: 65535,
+    data_res: 1,
+    data_offset: 0,
+    data_unit: "/",
+    data_props: params_propMap.firefighting_data
   }
 };
 

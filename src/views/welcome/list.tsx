@@ -5,6 +5,7 @@ import CellSOH from "./cellsoh/index.vue";
 import System_summary from "./system_summary/index.vue";
 import Cluster_summary from "./cluster_summary/index.vue";
 import Pack_summary from "./pack_summary/index.vue";
+import Pcs_data from "./pcs_data/index.vue";
 export const list = [
   {
     key: "cell_vltg",
@@ -40,5 +41,10 @@ export const list = [
     key: "pack_summary",
     title: "PACK汇总",
     component: Pack_summary
+  },
+  {
+    key: "pcs_data",
+    title: "PCS数据",
+    component: Pcs_data
   }
 ];
