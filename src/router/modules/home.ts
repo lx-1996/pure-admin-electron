@@ -17,8 +17,16 @@ export default {
       name: "Welcome",
       component: () => import("@/views/welcome/index.vue"),
       meta: {
-        title: "首页",
+        title: "首页1",
         showLink: VITE_HIDE_HOME === "true" ? false : true
+      }
+    },
+    {
+      path: "/welcome1",
+      name: "Welcome1",
+      component: () => import("@/views/welcome/cluster_summary/index.vue"),
+      meta: {
+        title: "首页2"
       }
     }
   ]

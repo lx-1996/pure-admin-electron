@@ -127,3 +127,17 @@ app.on("activate", () => {
     createWindow();
   }
 });
+// console.log("import.meta.env", import.meta.env);
+// /* import.meta.env {
+//   BASE_URL: '/',
+//   DEV: true,
+//   MODE: 'development',
+//   PROD: false,
+//   SSR: false,
+//   VITE_DEV_SERVER_URL: 'http://localhost:8848/',
+//   VITE_HIDE_HOME: 'false',
+//   VITE_PORT: '8848',
+//   VITE_PUBLIC_PATH: '/',
+//   VITE_ROUTER_HISTORY: 'hash'
+// } */
+// console.log("process.env", process.env);

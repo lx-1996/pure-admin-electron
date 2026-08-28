@@ -101,7 +101,7 @@ export function useColumns() {
   let listenerId: number | null = null;
 
   function onData(_event: any, value: any) {
-    console.log(value);
+    // console.log(value);
     data.value = Array.isArray(value) ? value : [];
     loading.value = false;
     loadingConfig.text = "加载完成";

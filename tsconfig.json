@@ -19,17 +19,10 @@
     "ignoreDeprecations": "6.0",
     "allowJs": false,
     "resolveJsonModule": true,
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@build/*": [
-        "build/*"
-      ]
+      "@/*": ["src/*"],
+      "@build/*": ["build/*"]
     },
     "types": [
       "node",
@@ -48,13 +41,10 @@
     "src/**/*.vue",
     "types/*.d.ts",
     "vite.config.ts",
-    "electron/**/*.d.ts"
-, "electron/main/types/worker.ts"  ],
-  "exclude": [
-    "dist",
-    "**/*.js",
-    "node_modules"
+    "electron/**/*.d.ts",
+    "electron/**/*.ts"
   ],
+  "exclude": ["dist", "**/*.js", "node_modules"],
   "references": [
     {
       "path": "./tsconfig.node.json"
