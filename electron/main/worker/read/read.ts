@@ -1,6 +1,6 @@
 ﻿import type { ModbusTCPClient } from "../client/clientClass";
 import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
-import type { ClassType } from "../dataPoint/tableGenerate";
+import type { ClassType } from "../types/dataPoint";
 import type { WorkerDataMessage } from "../types/worker";
 import { parse_raw_data } from "../dataPoint/parse";
 const READ_PARAMS = {

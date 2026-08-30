@@ -6,6 +6,7 @@ import System_summary from "./system_summary/index.vue";
 import Cluster_summary from "./cluster_summary/index.vue";
 import Pack_summary from "./pack_summary/index.vue";
 import Pcs_data from "./pcs_data/index.vue";
+import test from "./test.vue";
 export const list = [
   {
     key: "cell_vltg",
@@ -46,5 +47,10 @@ export const list = [
     key: "pcs_data",
     title: "PCS数据",
     component: Pcs_data
+  },
+  {
+    key: "test",
+    title: "测试",
+    component: test
   }
 ];

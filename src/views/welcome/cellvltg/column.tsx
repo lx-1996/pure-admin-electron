@@ -3,7 +3,7 @@
   AdaptiveConfig,
   PaginationProps
 } from "@pureadmin/table";
-import { ref, reactive, onBeforeMount, onBeforeUnmount } from "vue";
+import { ref, reactive, onBeforeMount, onBeforeUnmount, computed } from "vue";
 import { delay } from "@pureadmin/utils";
 export function useColumns() {
   const data = ref<Array<Record<string, any>>>([]);
@@ -26,6 +26,16 @@ export function useColumns() {
       prop: "data_unit"
     }
   ];
+  const columnsForPureDescriptions = computed(() => {
+    return data.value.map(item => {
+      return {
+        label: item.data_name,
+        cellRenderer: () => {
+          return <el-tag size="large">{item.data_parsed}</el-tag>;
+        }
+      };
+    });
+  });
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({
     pageSize: 20,
@@ -103,6 +113,7 @@ export function useColumns() {
     listenerId,
     onData,
     onCurrentChange,
-    onSizeChange
+    onSizeChange,
+    columnsForPureDescriptions
   };
 }

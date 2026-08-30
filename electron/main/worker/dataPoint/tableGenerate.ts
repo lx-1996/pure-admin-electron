@@ -8,129 +8,19 @@
  * - system_summary.data_name 待补充
  */
 
-// ---------- 类型定义 ----------
-/**参数类类型*/
-type ClassType =
-  | "cell_vltg"
-  | "cell_temp"
-  | "cell_soc"
-  | "cell_soh"
-  | "system_summary"
-  | "cluster_summary"
-  | "pack_summary"
-  | "pcs_data"
-  | "cooler_data"
-  | "dehumidifier_data"
-  | "firefighting_data";
-/** 寄存器数据类型 */
-type DataType =
-  | "uint16"
-  | "int16"
-  | "uint32"
-  | "float"
-  | "ascii"
-  | "bitfield"
-  | "hex"
-  | "uint16_regs"
-  | "int16_regs";
+import type {
+  BitConfig,
+  Build_data,
+  BuildTemplate,
+  ClassTable,
+  ClassType,
+  DataTypeConfig,
+  Irregular_props,
+  PointTable,
+  RES,
+  UNITTYPE
+} from "../types/dataPoint";
 
-interface DataTypeConfig {
-  data_type: DataType;
-  data_word_length: number;
-}
-type UNITTYPE =
-  | "V"
-  | "℃"
-  | "%"
-  | "mV"
-  | "/"
-  | "A"
-  | "kΩ"
-  | "kW"
-  | "kWh"
-  | "Ah"
-  | "kB";
-type RES = 1 | 0.1 | 0.01 | 0.001;
-type BIT_VALUE_TYPE =
-  | "bit_value"
-  | "bit_mapping"
-  | "reg_value"
-  | "reg_mapping"
-  | "reg_value_hex"
-  | "reg_value_ascii";
-interface BitConfig {
-  reg_idx: number;
-  reg_length?: number;
-  bit_offset?: number;
-  bit_length?: number;
-  bit_name?: string;
-  bit_value?: boolean;
-  bit_value_type?: BIT_VALUE_TYPE;
-  reg_type?: "uint16" | "int16" | "uint32" | "float";
-  bit_mapping?: Record<number, string>;
-}
-/** 单类点表（列式结构） */
-interface PointTable {
-  id?: number[];
-  /** 点名；system_summary 暂未生成，待补充 */
-  data_name: string[];
-  data_address?: number[];
-  data_type?: DataType[];
-  data_min?: number[];
-  data_max?: number[];
-  data_res?: RES[];
-  data_offset?: number[];
-  data_unit?: UNITTYPE[];
-  /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  data_word_length?: number[];
-  /** 位解析配置列：按参数索引对齐，无位配置的参数为 null */
-  data_bit_config?: (BitConfig[] | null)[];
-}
-
-/** 点表类定义 */
-interface ClassTable {
-  class: string;
-  isClusterParm: boolean;
-  addr_start: number;
-  addr_num: number;
-  data_invalid_value?: string;
-  data_disconnect_value?: string;
-  data_type?: DataType;
-  data_min?: number;
-  data_max?: number;
-  data_res?: RES;
-  data_unit?: UNITTYPE;
-  data_offset?: number;
-  data_props: PointTable;
-  /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  data_bit_config?: BitConfig[];
-}
-interface Build_data {
-  id: number;
-  data_name: string;
-  data_value: number | number[];
-  data_address?: number;
-  data_type?: DataType;
-  data_min?: number;
-  data_max?: number;
-  data_res?: RES;
-  data_offset?: number;
-  data_unit?: UNITTYPE;
-  /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
-  data_bit_config?: BitConfig[] | null;
-  data_word_length?: number;
-}
-interface Irregular_props {
-  data_name: string[];
-  data_type?: DataType[];
-  data_min?: number[];
-  data_max?: number[];
-  data_res?: RES[];
-  data_offset?: number[];
-  data_unit?: UNITTYPE[];
-  data_bit_config?: (BitConfig[] | null)[];
-  data_word_length?: number[];
-}
 // ---------- 生成工具 ----------
 
 // ---------- 地址长度容器 ----------
@@ -240,18 +130,6 @@ const SHARE = {
     return Array.from({ length: num }, () => ({
       data_type: "uint32",
       data_word_length: 2
-    }));
-  },
-  uint16_regs(length: number, num: number): DataTypeConfig[] {
-    return Array.from({ length: num }, () => ({
-      data_type: "uint16_regs",
-      data_word_length: length
-    }));
-  },
-  int16_regs(length: number, num: number): DataTypeConfig[] {
-    return Array.from({ length: num }, () => ({
-      data_type: "int16_regs",
-      data_word_length: length
     }));
   },
   bitfield(length: number, num: number): DataTypeConfig[] {
@@ -1171,19 +1049,19 @@ const params_irregular_props: Record<string, Irregular_props> = {
 const params_propMap: Record<ClassType, PointTable> = {
   cell_vltg: {
     //id: seq(ADDR_NUM_MAP.cell),
-    data_name: names("cell_vltg", ADDR_NUM_MAP.cell)
+    data_name: names("cell", ADDR_NUM_MAP.cell)
   },
   cell_temp: {
     //id: seq(ADDR_NUM_MAP.cell),
-    data_name: names("cell_temp", ADDR_NUM_MAP.cell)
+    data_name: names("temp", ADDR_NUM_MAP.cell)
   },
   cell_soc: {
     //id: seq(ADDR_NUM_MAP.cell),
-    data_name: names("cell_soc", ADDR_NUM_MAP.cell)
+    data_name: names("cell", ADDR_NUM_MAP.cell)
   },
   cell_soh: {
     //id: seq(ADDR_NUM_MAP.cell),
-    data_name: names("cell_soh", ADDR_NUM_MAP.cell)
+    data_name: names("cell", ADDR_NUM_MAP.cell)
   },
   system_summary: {
     // data_name 待补充
@@ -1234,7 +1112,8 @@ const params_propMap: Record<ClassType, PointTable> = {
 const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_vltg: {
     class: "cell_vltg",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: true,
     addr_start: 0x0000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -1249,7 +1128,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   cell_temp: {
     class: "cell_temp",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: true,
     addr_start: 0x1000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -1264,7 +1144,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   cell_soc: {
     class: "cell_soc",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: true,
     addr_start: 0x2000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -1278,7 +1159,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   cell_soh: {
     class: "cell_soh",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: true,
     addr_start: 0x3000,
     addr_num: ADDR_NUM_MAP.cell,
     data_invalid_value: "0x7FFF",
@@ -1292,7 +1174,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   system_summary: {
     class: "system_summary",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4000,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.system_summary,
     data_invalid_value: "0x7FFF",
@@ -1300,7 +1183,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   cluster_summary: {
     class: "cluster_summary",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4100,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.cluster_summary,
     data_invalid_value: "0x7FFF",
@@ -1308,14 +1192,16 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   pack_summary: {
     class: "pack_summary",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4200,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.pack_summary,
     data_props: params_propMap.pack_summary
   },
   pcs_data: {
     class: "pcs_data",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4500,
     addr_num: ADDR_NUM_MAP.pcs_data,
     data_type: "uint16",
@@ -1328,7 +1214,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   cooler_data: {
     class: "cooler_data",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4500,
     addr_num: ADDR_NUM_MAP.cooler_data,
     data_type: "uint16",
@@ -1341,7 +1228,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   dehumidifier_data: {
     class: "dehumidifier_data",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4500,
     addr_num: ADDR_NUM_MAP.dehumidifier_data,
     data_type: "uint16",
@@ -1354,7 +1242,8 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   },
   firefighting_data: {
     class: "firefighting_data",
-    isClusterParm: true,
+    parmLevel: "cluster",
+    isSharedProps: false,
     addr_start: 0x4500,
     addr_num: ADDR_NUM_MAP.firefighting_data,
     data_type: "uint16",
@@ -1381,14 +1270,12 @@ const PARAM_COLUMNS: (keyof PointTable)[] = [
   "data_word_length",
   "data_bit_config"
 ];
-const cell_class = ["cell_vltg", "cell_temp", "cell_soc", "cell_soh"];
-
 /** 计算某类点表的寄存器总数：Σ data_word_length（缺省 1） */
 function totalRegisters(cls: ClassTable): number {
   const props = cls.data_props;
   const paramNum = props.data_name.length;
   const wordLengths = props.data_word_length;
-  if (!wordLengths) return paramNum; //cell_class直接返回data_name长度
+  if (!wordLengths) return paramNum; // 共享属性的类未定义 data_word_length，直接返回参数个数
   let total = 0;
   for (let i = 0; i < paramNum; i++) total += wordLengths[i] ?? 1; //其余则计算wordLengths总长度
   return total;
@@ -1432,22 +1319,6 @@ function assertColumnLength(): void {
 
 // ---------- 静态模板缓存 ----------
 
-/**
- * 每类点表的静态构建模板：
- * 点表中除 data_value 外所有字段（id/name/address/type/res/offset/unit/bit_config）
- * 均为静态，只在首次构建时计算一次；slices 记录每个参数的寄存器切片位置。
- */
-interface BuildTemplate {
-  /** 静态字段模板（data_value 为占位，轮询时原地覆写） */
-  statics: Build_data[];
-  /** 每个参数在原始寄存器数组中的切片位置 */
-  slices: { start: number; length: number }[];
-  /** 该类期望的寄存器总数（= addr_num） */
-  regTotal: number;
-  /** 是否单体类（参数与寄存器 1:1，支持按配置数量部分读取） */
-  isCellLike: boolean;
-}
-
 const templateCache = new WeakMap<ClassTable, BuildTemplate>();
 
 function getTemplate(cls: ClassTable): BuildTemplate {
@@ -1455,7 +1326,7 @@ function getTemplate(cls: ClassTable): BuildTemplate {
   if (tpl) return tpl;
 
   const props = cls.data_props;
-  const isCellLike = cell_class.includes(cls.class);
+  const isSharedProps = cls.isSharedProps;
   const paramNum = props.data_name.length;
   const statics: Build_data[] = new Array(paramNum);
   const slices: BuildTemplate["slices"] = new Array(paramNum);
@@ -1463,7 +1334,7 @@ function getTemplate(cls: ClassTable): BuildTemplate {
   let dataIndex = 0; // 寄存器索引
   for (let i = 0; i < paramNum; i++) {
     const wordLength = props.data_word_length?.[i] ?? 1;
-    statics[i] = isCellLike
+    statics[i] = isSharedProps
       ? {
           id: i + 1,
           data_name: props.data_name[i],
@@ -1492,7 +1363,7 @@ function getTemplate(cls: ClassTable): BuildTemplate {
     dataIndex += wordLength;
   }
 
-  tpl = { statics, slices, regTotal: dataIndex, isCellLike };
+  tpl = { statics, slices, regTotal: dataIndex, isSharedProps };
   templateCache.set(cls, tpl);
   return tpl;
 }
@@ -1506,7 +1377,7 @@ function getTemplate(cls: ClassTable): BuildTemplate {
 function build_data(data: number[], cls: ClassTable): Build_data[] {
   const tpl = getTemplate(cls);
 
-  if (tpl.isCellLike) {
+  if (tpl.isSharedProps) {
     if (data.length > tpl.statics.length) {
       throw new Error(
         `[点表] ${cls.class} 读取寄存器数(${data.length})超过该类参数个数(${tpl.statics.length})`
@@ -1534,17 +1405,7 @@ function build_data(data: number[], cls: ClassTable): Build_data[] {
 export {
   assertColumnLength,
   classes_fieldsMap,
-  cell_class,
   build_data,
   SHARE,
   ADDR_NUM_MAP_WITHOUT_RES
-};
-export type {
-  DataType,
-  PointTable,
-  ClassTable,
-  ClassType,
-  BitConfig,
-  Build_data,
-  RES
 };

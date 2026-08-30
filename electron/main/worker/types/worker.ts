@@ -1,17 +1,8 @@
-﻿import type { ClassType } from "../dataPoint/tableGenerate";
+﻿import type { ClassType } from "./dataPoint";
 export interface WorkerDataMessage {
   type: ClassType;
 
   data: unknown;
 }
 
-interface WorkerAlarmMessage {
-  type: "alarm";
-
-  data: {
-    level: number;
-    message: string;
-  };
-}
-
-export type WorkerMessage = WorkerDataMessage | WorkerAlarmMessage;
+export type WorkerMessage = WorkerDataMessage;

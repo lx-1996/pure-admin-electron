@@ -1,4 +1,4 @@
-﻿import type * as table from "./tableGenerate";
+﻿import type * as table from "../types/dataPoint";
 interface FieldsForParse {
   data_type?: table.DataType;
   data_res?: table.RES;
@@ -34,6 +34,10 @@ function parse_linear_uint32(data: number[], fields: FieldsForParse) {
   const decimal_places = get_decimal_places(data_res);
   return (value * data_res + data_offset).toFixed(decimal_places);
 }
+/** ASCII 可打印字符校验（32~126），不可打印字符以空格占位 */
+function isValidAscii(code: number) {
+  return code >= 32 && code <= 126;
+}
 function parse_ascii(data: number | number[]) {
   const regs = Array.isArray(data) ? data : data !== undefined ? [data] : [];
   const result: string[] = [];
@@ -41,7 +45,7 @@ function parse_ascii(data: number | number[]) {
   // 遍历每个寄存器的十进制数
   regs.forEach(reg => {
     if (reg === 0) {
-      result.push("0"); // 用 0 替换
+      result.push("00"); // 补零对齐：每个寄存器固定输出 2 字符，避免与正常寄存器混排时长度错位
       return;
     }
     // 🔥 新增：确保处理的是16位数字
@@ -66,9 +70,6 @@ function parse_ascii(data: number | number[]) {
       isValidAscii(secondCharCode) ? String.fromCharCode(secondCharCode) : " "
     );
   });
-  function isValidAscii(code: number) {
-    return code >= 32 && code <= 126;
-  }
   // 返回组合后的字符串
   return result.join("");
 }
@@ -176,63 +177,57 @@ function judge_data_type(
     return "isASCII";
   } else if (data_type == "bitfield" && data_bit_config?.length) {
     return "isBitfield";
-  } else if (
-    data_type == "uint16_regs" ||
-    (data_type == "int16_regs" && data_bit_config?.length)
-  ) {
-    return "isuint16_regs";
   }
+  // 其余类型（hex/float/未配置 data_type 等）返回 undefined，
+  // 由 parse_raw_data 的 default 分支原样返回 data_value
 }
 function parse_raw_data(build_data: table.Build_data[]) {
-  //console.log(build_data)
-  try {
-    return build_data.map(item => {
-      const { data_type, data_res, data_offset, data_value, data_bit_config } =
-        item;
-      switch (judge_data_type(data_type, data_bit_config)) {
-        case "isUint16": {
-          const data_parsed = parse_linear_uint16(
-            Array.isArray(data_value) ? (data_value[0] ?? 0) : data_value,
-            {
+  // 解析失败直接上抛，由调用方（readData）的 try/catch 统一记录错误，
+  // 避免静默吞错后向渲染进程发送 undefined 数据
+  return build_data.map(item => {
+    const { data_type, data_res, data_offset, data_value, data_bit_config } =
+      item;
+    switch (judge_data_type(data_type, data_bit_config)) {
+      case "isUint16": {
+        const data_parsed = parse_linear_uint16(
+          Array.isArray(data_value) ? (data_value[0] ?? 0) : data_value,
+          {
+            data_type,
+            data_res,
+            data_offset
+          }
+        );
+        return { ...item, data_parsed };
+      }
+      case "isUint32": {
+        const data_parsed = parse_linear_uint32(
+          Array.isArray(data_value) ? data_value : [data_value],
+          {
+            data_res,
+            data_offset
+          }
+        );
+        return { ...item, data_parsed };
+      }
+      case "isASCII": {
+        const data_parsed = parse_ascii(data_value);
+        return { ...item, data_parsed };
+      }
+      case "isBitfield": {
+        // judge_data_type 已保证 data_bit_config 非空，此处防御性再判
+        const data_parsed = data_bit_config?.length
+          ? parse_bitfield_value(data_value, data_bit_config, {
               data_type,
               data_res,
               data_offset
-            }
-          );
-          return { ...item, data_parsed };
-        }
-        case "isUint32": {
-          const data_parsed = parse_linear_uint32(
-            Array.isArray(data_value) ? data_value : [data_value],
-            {
-              data_res,
-              data_offset
-            }
-          );
-          return { ...item, data_parsed };
-        }
-        case "isASCII": {
-          const data_parsed = parse_ascii(data_value);
-          return { ...item, data_parsed };
-        }
-        case "isBitfield": {
-          // judge_data_type 已保证 data_bit_config 非空，此处防御性再判
-          const data_parsed = data_bit_config?.length
-            ? parse_bitfield_value(data_value, data_bit_config, {
-                data_type,
-                data_res,
-                data_offset
-              })
-            : undefined;
-          return { ...item, data_parsed };
-        }
-        default: {
-          return { ...item, data_parsed: item.data_value };
-        }
+            })
+          : undefined;
+        return { ...item, data_parsed };
       }
-    });
-  } catch (e) {
-    console.log(e);
-  }
+      default: {
+        return { ...item, data_parsed: item.data_value };
+      }
+    }
+  });
 }
 export { parse_raw_data };

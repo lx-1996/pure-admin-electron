@@ -13,7 +13,8 @@ const {
   loadingConfig,
   adaptiveConfig,
   onCurrentChange,
-  onSizeChange
+  onSizeChange,
+  columnsForPureDescriptions
 } = useColumns();
 </script>
 
@@ -38,5 +39,12 @@ const {
     :pagination="pagination"
     @page-size-change="onSizeChange"
     @page-current-change="onCurrentChange"
+  />
+  <PureDescriptions
+    :columns="columnsForPureDescriptions"
+    border
+    :column="10"
+    direction="vertical"
+    size="small"
   />
 </template>
