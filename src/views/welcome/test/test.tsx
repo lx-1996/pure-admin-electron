@@ -1,4 +1,5 @@
 ﻿import { defineComponent, h, ref } from "vue";
+import { ElButton } from "element-plus";
 export default defineComponent({
   name: "Test1",
   setup() {
@@ -13,7 +14,7 @@ export default defineComponent({
   },
   render() {
     return h("div", null, [
-      h("el-button", { onClick: this.sum }, "增加"),
+      h(ElButton, { type: "primary", onClick: this.sum }, "增加"),
       h("div", null, this.count)
     ]);
   }

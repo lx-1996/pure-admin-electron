@@ -100,6 +100,11 @@ async function createWindow() {
 app.whenReady().then(async () => {
   initRendererHandler({ preload, url, indexHtml });
   await createWindow();
+  // 必须在 startWorker(fork) 之前，子进程才会继承
+  const isDev = !!process.env.VITE_DEV_SERVER_URL;
+  process.env.LOG_DIR = isDev
+    ? join(__dirname, "../../log") // 开发：项目根/log
+    : app.getPath("userData"); // 生产：%APPDATA%/electron-pure-admin
   startWorker(
     (channel, data) => win?.webContents.send(channel, data),
     __dirname

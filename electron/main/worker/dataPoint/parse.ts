@@ -184,7 +184,8 @@ function judge_data_type(
 function parse_raw_data(build_data: table.Build_data[]) {
   // 解析失败直接上抛，由调用方（readData）的 try/catch 统一记录错误，
   // 避免静默吞错后向渲染进程发送 undefined 数据
-  return build_data.map(item => {
+  let parsed_data: table.Build_data[] = [];
+  parsed_data = build_data.map(item => {
     const { data_type, data_res, data_offset, data_value, data_bit_config } =
       item;
     switch (judge_data_type(data_type, data_bit_config)) {
@@ -229,5 +230,55 @@ function parse_raw_data(build_data: table.Build_data[]) {
       }
     }
   });
+  return parsed_data;
 }
-export { parse_raw_data };
+import type { ThisClientBMUConfigData } from "../client/clientClass";
+function getBMUIdx(
+  bmu_config: ThisClientBMUConfigData,
+  cellIdx: Array<number>
+) {
+  const { cell_config_perAFE, total_cell_perBMU } = bmu_config;
+  // const indexKey = [
+  //   "cellIndexInBMUs",
+  //   "cellIndexInBMU",
+  //   "cellIndexInAFE",
+  //   "afeIndex",
+  //   "bmuIndex"
+  // ];
+  const bmuIndex: Array<number> = [];
+  const afeIndex: Array<number> = [];
+  cellIdx.forEach(item => {
+    bmuIndex.push(Math.trunc(item / total_cell_perBMU) + 1);
+    for (let j = 0; j < cell_config_perAFE.length; j++) {
+      const sumStart = cell_config_perAFE
+        .slice(0, j)
+        .reduce((acc, val) => acc + val, 0);
+      const sumEnd =
+        cell_config_perAFE.slice(0, j + 1).reduce((acc, val) => acc + val, 0) -
+        1;
+      if (
+        item % total_cell_perBMU >= sumStart &&
+        item % total_cell_perBMU <= sumEnd
+      ) {
+        afeIndex.push(j + 1);
+      }
+    }
+  });
+  const res = {
+    bmuIndex,
+    afeIndex
+  };
+  return res;
+  /* 
+  遍历所有cellIdx,索引
+[0,10],属于afe1,11,[slice(0,0).reduce,slice(0,1).reduce-1]
+[11,22]属于afe2,12,[slice(0,1).reduce,slice(0,2).reduce-1]
+[23,35]属于afe3,13,[slice(0,2).reduce,slice(0,3).reduce-1]
+[36,49]属于afe4,14,[slice(0,3).reduce,slice(0,4).reduce-1]
+[50,60]属于afe1,
+[61,72]属于afe2,
+[73,85]属于afe3,
+[86,99]属于afe4,
+  */
+}
+export { parse_raw_data, getBMUIdx };

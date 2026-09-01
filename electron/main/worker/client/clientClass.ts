@@ -8,11 +8,13 @@ interface ModbusTCPClientProps {
   client_reconnect_times: number;
   client_heatbeat: number;
 }
-interface ThisClientBMUConfigData {
+export interface ThisClientBMUConfigData {
   bmu_total: number;
   afe_perBMU: number;
   cell_config_perAFE: number[];
   temp_config_perAFE: number[];
+  total_cell_perBMU: number;
+  total_temp_perBMU: number;
   total_cell_num: number;
   total_temp_num: number;
 }
@@ -39,11 +41,13 @@ export class ModbusTCPClient {
     };
     this.client_data = {
       bmu_config: {
-        bmu_total: 5,
+        bmu_total: 8,
         afe_perBMU: 4,
-        cell_config_perAFE: [12, 12, 12, 12],
+        cell_config_perAFE: [11, 12, 13, 14],
         temp_config_perAFE: [6, 6, 6, 6],
-        total_cell_num: 240,
+        total_cell_perBMU: 50,
+        total_temp_perBMU: 24,
+        total_cell_num: 400,
         total_temp_num: 120
       },
       other_config: {}
