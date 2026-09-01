@@ -6,7 +6,7 @@ import System_summary from "./system_summary/index.vue";
 import Cluster_summary from "./cluster_summary/index.vue";
 import Pack_summary from "./pack_summary/index.vue";
 import Pcs_data from "./pcs_data/index.vue";
-import test from "./test.vue";
+import test from "./test/test.vue";
 export const list = [
   {
     key: "cell_vltg",

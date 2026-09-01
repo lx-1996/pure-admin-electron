@@ -15,15 +15,14 @@
         <el-button type="text">编辑</el-button>
       </template>
     </PureDescriptions>
+    <Test1 value="hello" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import type { DescriptionsColumns } from "@pureadmin/descriptions";
-defineOptions({
-  name: "test"
-});
+import Test1 from "./test";
 // 库导出的 DescriptionsColumns 继承了 element-plus 内部注入类型（span/width 等全为必填），
 // 此处包装为"label 必填、其余可选"的列配置类型
 type DescriptionsColumn = Pick<DescriptionsColumns, "label"> &
