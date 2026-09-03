@@ -48,7 +48,7 @@ export class ModbusTCPClient {
         total_cell_perBMU: 50,
         total_temp_perBMU: 24,
         total_cell_num: 400,
-        total_temp_num: 120
+        total_temp_num: 192
       },
       other_config: {}
     };

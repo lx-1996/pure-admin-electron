@@ -40,12 +40,12 @@ const {
     @page-size-change="onSizeChange"
     @page-current-change="onCurrentChange"
   />
-  <PureDescriptions
+  <!-- <PureDescriptions
     :columns="columnsForPureDescriptions"
     border
     :column="10"
     direction="vertical"
     size="small"
     align="center"
-  />
+  /> -->
 </template>

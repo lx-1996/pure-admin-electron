@@ -105,6 +105,10 @@ export interface ClassTable {
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
   data_bit_config?: BitConfig[];
 }
+export interface BitParsedItem {
+  bit_name?: string;
+  bit_value: string | number | null;
+}
 export interface Build_data {
   id: number;
   data_name: string;
@@ -119,6 +123,7 @@ export interface Build_data {
   /** 该参数占用的寄存器数；缺省按 DATA_WORD_LENGTH 依据 data_type 推导 */
   data_bit_config?: BitConfig[] | null;
   data_word_length?: number;
+  data_parsed?: string | string[] | number | number[] | BitParsedItem[];
 }
 /** 不规则点表属性列：点表列式结构去掉 id/data_address 后的部分（系统/簇/包汇总类专用） */
 export type Irregular_props = Omit<PointTable, "id" | "data_address">;

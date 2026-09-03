@@ -36,7 +36,7 @@ export function writeLog(tag: string, data: unknown) {
   }
   const line = `${timestamp()} [${tag}] ${payload}\n`;
   try {
-    fs.appendFileSync(filePath, line, "utf8");
+    fs.promises.appendFile(filePath, line, "utf8");
   } catch (e) {
     console.error("[logger] 写入失败:", e);
   }

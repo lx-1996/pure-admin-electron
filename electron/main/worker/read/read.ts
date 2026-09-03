@@ -2,7 +2,7 @@
 import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
 import type { ClassType } from "../types/dataPoint";
 import type { WorkerDataMessage } from "../types/worker";
-import { parse_raw_data, getBMUIdx } from "../dataPoint/parse";
+import { parse_raw_data, getCellIdx } from "../dataPoint/parse";
 import { writeLog } from "../logger";
 import type { ThisClientBMUConfigData } from "../client/clientClass";
 const READ_PARAMS = {
@@ -10,6 +10,7 @@ const READ_PARAMS = {
   READ_INTERVAL: 1000
 };
 const CellClass = ["cell_vltg", "cell_temp", "cell_soc", "cell_soh"];
+
 async function repeatRead(
   client: ModbusTCPClient,
   add_start: number,
@@ -37,12 +38,11 @@ export async function readData(
   isInput: boolean = true
 ) {
   const filedsMap = classes_fieldsMap[data_class];
-  const addr_num =
-    bmu_config && bmu_config.total_cell_num
-      ? bmu_config.total_cell_num
-      : bmu_config && bmu_config.total_temp_num
-        ? bmu_config.total_temp_num
-        : filedsMap.addr_num;
+  let addr_num;
+  if (bmu_config) {
+    if (data_class == "cell_temp") addr_num = bmu_config.total_temp_num;
+    else addr_num = bmu_config.total_cell_num;
+  } else addr_num = filedsMap.addr_num;
   try {
     const read_data = await repeatRead(
       client,
@@ -51,13 +51,15 @@ export async function readData(
       isInput
     );
     const data_build = build_data(read_data, filedsMap);
-    const data_parsed = parse_raw_data(data_build);
+    let data_parsed = parse_raw_data(data_build);
     if (CellClass.includes(data_class) && bmu_config) {
-      const cellIdx = data_parsed.map(item => item.id);
-      const idxRes = getBMUIdx(bmu_config, cellIdx);
-      console.log(idxRes);
+      const isTemp = data_class === "cell_temp";
+      data_parsed = getCellIdx(bmu_config, data_parsed, isTemp);
+      //writeLog("index", parsedData);
+      //console.log("afeIndex", idxRes.afeIndex);
+      // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
     }
-    writeLog(data_class, data_parsed);
+    // writeLog(data_class, data_parsed);
     const message: WorkerDataMessage = {
       type: data_class,
       data: data_parsed

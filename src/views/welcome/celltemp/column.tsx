@@ -14,8 +14,24 @@ export function useColumns() {
       prop: "id"
     },
     {
-      label: "名称",
-      prop: "data_name"
+      label: "全局索引",
+      prop: "sensorIndexInBMUs"
+    },
+    {
+      label: "所处BMU中索引",
+      prop: "sensorIndexInBMU"
+    },
+    {
+      label: "所处AFE中索引",
+      prop: "sensorIndexInAFE"
+    },
+    {
+      label: "所处BMU",
+      prop: "bmuIndex"
+    },
+    {
+      label: "所处AFE",
+      prop: "afeIndex"
     },
     {
       label: "值",
