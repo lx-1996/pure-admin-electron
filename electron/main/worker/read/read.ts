@@ -51,20 +51,27 @@ export async function readData(
       isInput
     );
     const data_build = build_data(read_data, filedsMap);
-    let data_parsed = parse_raw_data(data_build);
+    const data_parsed = parse_raw_data(data_build);
     if (CellClass.includes(data_class) && bmu_config) {
       const isTemp = data_class === "cell_temp";
-      data_parsed = getCellIdx(bmu_config, data_parsed, isTemp);
+      const cell_data = getCellIdx(bmu_config, data_parsed, isTemp);
       //writeLog("index", parsedData);
       //console.log("afeIndex", idxRes.afeIndex);
       // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
+      const message: WorkerDataMessage = {
+        type: data_class,
+        data: cell_data
+      };
+      process.send?.(message);
     }
     // writeLog(data_class, data_parsed);
-    const message: WorkerDataMessage = {
-      type: data_class,
-      data: data_parsed
-    };
-    process.send?.(message);
+    else {
+      const message: WorkerDataMessage = {
+        type: data_class,
+        data: data_parsed
+      };
+      process.send?.(message);
+    }
   } catch (e) {
     const err = e instanceof Error ? { message: e.message, stack: e.stack } : e;
     writeLog(`${data_class}-error`, err);

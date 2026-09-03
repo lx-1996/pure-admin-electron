@@ -9,7 +9,7 @@ async function initTCPClient(ip: string, port: number, timeout: number) {
 async function start() {
   // 点表完整性校验：列错位/寄存器数不符时直接终止，避免产出错位数据
   assertColumnLength();
-  await initTCPClient("192.168.10.208", 502, 10000);
+  await initTCPClient("127.0.0.1", 502, 10000);
   if (modbusTCPClient.clientProps.client_status !== "connected") {
     return;
   }
@@ -25,28 +25,28 @@ async function start() {
         "cell_vltg",
         modbusTCPClient.client_data.bmu_config
       );
-      // await readData(
-      //   modbusTCPClient,
-      //   "cell_temp",
-      //   modbusTCPClient.client_data.bmu_config
-      // );
-      // await readData(
-      //   modbusTCPClient,
-      //   "cell_soc",
-      //   modbusTCPClient.client_data.bmu_config
-      // );
-      // await readData(
-      //   modbusTCPClient,
-      //   "cell_soh",
-      //   modbusTCPClient.client_data.bmu_config
-      // );
-      // await readData(modbusTCPClient, "system_summary");
-      // await readData(modbusTCPClient, "cluster_summary");
-      // await readData(modbusTCPClient, "pack_summary");
-      // await readData(modbusTCPClient, "pcs_data");
-      // await readData(modbusTCPClient, "cooler_data");
-      // await readData(modbusTCPClient, "dehumidifier_data");
-      // await readData(modbusTCPClient, "firefighting_data");
+      await readData(
+        modbusTCPClient,
+        "cell_temp",
+        modbusTCPClient.client_data.bmu_config
+      );
+      await readData(
+        modbusTCPClient,
+        "cell_soc",
+        modbusTCPClient.client_data.bmu_config
+      );
+      await readData(
+        modbusTCPClient,
+        "cell_soh",
+        modbusTCPClient.client_data.bmu_config
+      );
+      await readData(modbusTCPClient, "system_summary");
+      await readData(modbusTCPClient, "cluster_summary");
+      await readData(modbusTCPClient, "pack_summary");
+      await readData(modbusTCPClient, "pcs_data");
+      await readData(modbusTCPClient, "cooler_data");
+      await readData(modbusTCPClient, "dehumidifier_data");
+      await readData(modbusTCPClient, "firefighting_data");
     } catch (e) {
       console.error(e);
     }

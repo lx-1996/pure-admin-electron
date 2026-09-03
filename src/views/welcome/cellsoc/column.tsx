@@ -3,36 +3,29 @@
   AdaptiveConfig,
   PaginationProps
 } from "@pureadmin/table";
-import { ref, reactive, onBeforeMount, onBeforeUnmount } from "vue";
+import { ref, reactive, onBeforeMount, onBeforeUnmount, computed } from "vue";
 import { delay } from "@pureadmin/utils";
 export function useColumns() {
   const data = ref<Array<Record<string, any>>>([]);
   const loading = ref(true);
-  const columns: TableColumnList = [
-    {
-      label: "id",
-      prop: "id"
-    },
-    {
-      label: "名称",
-      prop: "data_name"
-    },
-    {
-      label: "值",
-      prop: "data_parsed"
-    },
-    {
-      label: "单位",
-      prop: "data_unit"
-    }
-    // {
-    //   label: "地址",
-    //   prop: "data_address"
-    // }
-  ];
+  const columnNum = ref(12);
+  const columns = computed(() => {
+    return [
+      {
+        label: "BMU-AFE",
+        prop: "bmuAFEIndex"
+      },
+      ...Array.from({ length: columnNum.value }, (_, index) => {
+        return {
+          label: `${index}`,
+          prop: `${index}`
+        };
+      })
+    ];
+  });
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({
-    pageSize: 20,
+    pageSize: 60,
     currentPage: 1,
     pageSizes: [20, 40, 60],
     total: 0,
@@ -82,7 +75,8 @@ export function useColumns() {
 
   function onData(_event: any, value: any) {
     //console.log("cell_soc");
-    data.value = Array.isArray(value) ? value : [];
+    data.value = Array.isArray(value.data) ? value.data : [];
+    columnNum.value = value?.maxCellsPerAFE;
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;

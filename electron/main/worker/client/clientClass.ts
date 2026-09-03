@@ -43,11 +43,11 @@ export class ModbusTCPClient {
       bmu_config: {
         bmu_total: 8,
         afe_perBMU: 4,
-        cell_config_perAFE: [11, 12, 13, 14],
+        cell_config_perAFE: [12, 12, 12, 12],
         temp_config_perAFE: [6, 6, 6, 6],
-        total_cell_perBMU: 50,
+        total_cell_perBMU: 48,
         total_temp_perBMU: 24,
-        total_cell_num: 400,
+        total_cell_num: 384,
         total_temp_num: 192
       },
       other_config: {}

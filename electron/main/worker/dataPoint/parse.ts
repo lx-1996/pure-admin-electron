@@ -298,28 +298,32 @@ function getCellIdx(
       sensorIndexInAFE: sensorIndexInAFE[index],
       indexLabel: isTemp
         ? `temp-${sensorIndexInBMU[index]}`
-        : `cell-${sensorIndexInBMU[index]}`
+        : `cell-${sensorIndexInBMU[index]}`,
+      bmuAFEIndex: `${bmuIndex[index]}-${afeIndex[index]}`,
+      valueWithIdx: `${item.data_parsed} #${sensorIndexInBMUs[index]}`
     };
   });
-  // const data1 = Array.from({ length: bmu_total }, (_, index) => index + 1).map(
-  //   item => {
-  //     let res
-  //     res= {
-  //       bmuIndex: item,
-  //       thisBMU_sensorValue: parsedData
-  //         .filter(dataItem => dataItem.bmuIndex === item)
-  //         .map(item => {
-  //           return {
-  //             label: item.indexLabel,
-  //             value: item.data_parsed
-  //           };
-  //         })
-  //     };
-  //   }
-  // );
-  // writeLog("vlgt", data1);
+  const parsedDataForRenderer = [
+    ...new Set(parsedData.map(item => item.bmuAFEIndex))
+  ].map(item => {
+    return {
+      ...{ bmuAFEIndex: item },
+      ...Object.assign(
+        {},
+        parsedData
+          .filter(item1 => item1.bmuAFEIndex === item)
+          .map(item => item.valueWithIdx)
+      )
+    };
+  });
+  const dataForSend = {
+    data: parsedDataForRenderer,
+    maxCellsPerAFE: Math.max(...sensor_config_perAFE),
+    time: Date.now()
+  };
+  //writeLog("vlgt", data1);
   //console.log(parsedData);
-  return parsedData;
+  return dataForSend;
   /* 
   遍历所有cellIdx,索引
 [0,10],属于afe1,11,[slice(0,0).reduce,slice(0,1).reduce-1]  [0,10] 0

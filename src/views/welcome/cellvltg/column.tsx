@@ -7,54 +7,25 @@ import { ref, reactive, onBeforeMount, onBeforeUnmount, computed } from "vue";
 import { delay } from "@pureadmin/utils";
 export function useColumns() {
   const data = ref<Array<Record<string, any>>>([]);
+  const columnNum = ref(12);
   const loading = ref(true);
-  const columns: TableColumnList = [
-    {
-      label: "id",
-      prop: "id"
-    },
-    {
-      label: "全局索引",
-      prop: "sensorIndexInBMUs"
-    },
-    {
-      label: "所处BMU中索引",
-      prop: "sensorIndexInBMU"
-    },
-    {
-      label: "所处AFE中索引",
-      prop: "sensorIndexInAFE"
-    },
-    {
-      label: "所处BMU",
-      prop: "bmuIndex"
-    },
-    {
-      label: "所处AFE",
-      prop: "afeIndex"
-    },
-    {
-      label: "值",
-      prop: "data_parsed"
-    },
-    {
-      label: "单位",
-      prop: "data_unit"
-    }
-  ];
-  const columnsForPureDescriptions = computed(() => {
-    return data.value.map(item => {
-      return {
-        label: item.data_name,
-        cellRenderer: () => {
-          return <el-tag size="large">{item.data_parsed}</el-tag>;
-        }
-      };
-    });
+  const columns = computed(() => {
+    return [
+      {
+        label: "BMU-AFE",
+        prop: "bmuAFEIndex"
+      },
+      ...Array.from({ length: columnNum.value }, (_, index) => {
+        return {
+          label: `${index}`,
+          prop: `${index}`
+        };
+      })
+    ];
   });
   /** 分页配置 */
   const pagination = reactive<PaginationProps>({
-    pageSize: 20,
+    pageSize: 60,
     currentPage: 1,
     pageSizes: [20, 40, 60],
     total: 0,
@@ -104,7 +75,8 @@ export function useColumns() {
 
   function onData(_event: any, value: any) {
     //console.log("cell_vltg");
-    data.value = Array.isArray(value) ? value : [];
+    data.value = Array.isArray(value.data) ? value.data : [];
+    columnNum.value = value?.maxCellsPerAFE;
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
@@ -129,7 +101,6 @@ export function useColumns() {
     listenerId,
     onData,
     onCurrentChange,
-    onSizeChange,
-    columnsForPureDescriptions
+    onSizeChange
   };
 }

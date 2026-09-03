@@ -19,32 +19,34 @@ const {
 </script>
 
 <template>
-  <pure-table
-    ref="tableRef"
-    border
-    adaptive
-    :adaptiveConfig="adaptiveConfig"
-    row-key="id"
-    alignWhole="center"
-    showOverflowTooltip
-    :loading="loading"
-    :loading-config="loadingConfig"
-    :data="
-      data.slice(
-        (pagination.currentPage - 1) * pagination.pageSize,
-        pagination.currentPage * pagination.pageSize
-      )
-    "
-    :columns="columns"
-    :pagination="pagination"
-    @page-size-change="onSizeChange"
-    @page-current-change="onCurrentChange"
-  />
-  <PureDescriptions
-    :columns="columnsForPureDescriptions"
-    border
-    :column="10"
-    direction="vertical"
-    size="small"
-  />
+  <div>
+    <pure-table
+      ref="tableRef"
+      border
+      adaptive
+      :adaptiveConfig="adaptiveConfig"
+      row-key="id"
+      alignWhole="center"
+      showOverflowTooltip
+      :loading="loading"
+      :loading-config="loadingConfig"
+      :data="
+        data.slice(
+          (pagination.currentPage - 1) * pagination.pageSize,
+          pagination.currentPage * pagination.pageSize
+        )
+      "
+      :columns="columns"
+      :pagination="pagination"
+      @page-size-change="onSizeChange"
+      @page-current-change="onCurrentChange"
+    />
+    <PureDescriptions
+      :columns="columnsForPureDescriptions"
+      border
+      :column="10"
+      direction="vertical"
+      size="small"
+    />
+  </div>
 </template>

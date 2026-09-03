@@ -2,7 +2,7 @@
 import { list } from "./list";
 import { ref } from "vue";
 defineOptions({
-  name: "Welcome"
+  name: "Welcome1"
 });
 const selected = ref(0);
 function tabClick({ index }) {
