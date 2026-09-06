@@ -114,25 +114,29 @@ function parse_bitfield_value(
     switch (item.bit_value_type) {
       case "bit_value": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: item_bit_value
         };
       }
       case "bit_mapping": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: item?.bit_mapping?.[item_bit_value] ?? null
         };
       }
       case "reg_value": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: reg_value
         };
       }
       case "reg_value_hex": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: parse_hex_registers(
             data,
             item.reg_idx,
@@ -142,7 +146,8 @@ function parse_bitfield_value(
       }
       case "reg_value_ascii": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: parse_ascii(
             Array.isArray(data)
               ? data.slice(item.reg_idx, item.reg_idx + (item.reg_length ?? 1))
@@ -152,13 +157,15 @@ function parse_bitfield_value(
       }
       case "reg_mapping": {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: item?.bit_mapping?.[item_value] ?? null
         };
       }
       default: {
         return {
-          bit_name: item?.bit_name,
+          ...item,
+          bit_raw: item_bit_value,
           bit_value: item_bit_value
         };
       }

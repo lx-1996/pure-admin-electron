@@ -82,6 +82,7 @@ export interface PointTable {
   data_word_length?: number[];
   /** 位解析配置列：按参数索引对齐，无位配置的参数为 null */
   data_bit_config?: (BitConfig[] | null)[];
+  data_isHiden?: boolean[];
 }
 
 /** 点表类定义 */
@@ -124,6 +125,7 @@ export interface Build_data {
   data_bit_config?: BitConfig[] | null;
   data_word_length?: number;
   data_parsed?: string | string[] | number | number[] | BitParsedItem[];
+  data_isHiden?: boolean;
 }
 /** 不规则点表属性列：点表列式结构去掉 id/data_address 后的部分（系统/簇/包汇总类专用） */
 export type Irregular_props = Omit<PointTable, "id" | "data_address">;

@@ -447,22 +447,16 @@ const params_irregular_props: Record<string, Irregular_props> = {
       "放电SOP",
       "放电SOP-MAP表坐标列",
       "放电SOP-MAP表坐标行",
-      "簇端最大允许充电功率",
-      //"簇端最大允许充电功率",
-      "簇端最大允许放电功率",
-      //"簇端最大允许放电功率",
+      "最大允许充电功率",
+      "最大允许放电功率",
       "单次充电电量",
-      //"单次充电电量",
       "单次放电电量",
-      //"单次放电电量",
       "单次充电容量",
-      //"单次充电容量",
       "单次放电容量",
-      //"单次放电容量",
       "簇真实SOC",
       "OCV执行次数",
-      "簇端动力接插件电池测温差值",
-      "簇端动力接插件PCS测温差值",
+      "动力接插件电池测温差值",
+      "动力接插件PCS测温差值",
       "CAN霍尔传感器状态信息",
       "CAN霍尔传感器名称",
       "CAN霍尔传感器软件版本",
@@ -470,11 +464,8 @@ const params_irregular_props: Record<string, Irregular_props> = {
       "预留",
       "系统状态",
       "周期任务堆栈大小",
-      //"周期任务堆栈大小",
       "系统堆栈空间",
-      //"系统堆栈空间",
       "系统堆栈最小空间",
-      //"系统堆栈最小空间",
       "可配置默认参数剩余次数",
       "预留",
       "预留",
@@ -523,6 +514,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           bit_value_type: "reg_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "静置",
             1: "充电",
@@ -538,6 +530,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           bit_value_type: "reg_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "无故障",
             1: "严重故障",
@@ -552,8 +545,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 1,
-          bit_name: "静置状态",
+          bit_name: "静置",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未静置",
             1: "静置"
@@ -563,7 +557,8 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 1,
           bit_length: 1,
-          bit_name: "充电状态",
+          bit_name: "充电",
+          display_mode: "nameHighLightWithBitRaw",
           bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未充电",
@@ -574,7 +569,8 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 2,
           bit_length: 1,
-          bit_name: "放电状态",
+          bit_name: "放电",
+          display_mode: "nameHighLightWithBitRaw",
           bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未放电",
@@ -585,7 +581,8 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 3,
           bit_length: 1,
-          bit_name: "禁充状态",
+          bit_name: "禁充",
+          display_mode: "nameHighLightWithBitRaw",
           bit_value_type: "bit_mapping",
           bit_mapping: {
             0: "未禁充",
@@ -596,8 +593,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 4,
           bit_length: 1,
-          bit_name: "禁放状态",
+          bit_name: "禁放",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未禁放",
             1: "禁放"
@@ -609,6 +607,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "禁充禁放",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未禁充禁放",
             1: "禁充禁放"
@@ -618,8 +617,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 6,
           bit_length: 1,
-          bit_name: "告警状态",
+          bit_name: "告警",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未告警",
             1: "告警"
@@ -629,8 +629,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 7,
           bit_length: 1,
-          bit_name: "故障状态",
+          bit_name: "故障",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未故障",
             1: "故障"
@@ -640,8 +641,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 8,
           bit_length: 1,
-          bit_name: "充电功率锁存状态",
+          bit_name: "充电功率锁存",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未充电功率锁存中",
             1: "充电功率锁存中"
@@ -651,8 +653,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 9,
           bit_length: 1,
-          bit_name: "放电功率锁存状态",
+          bit_name: "放电功率锁存",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未放电功率锁存中",
             1: "放电功率锁存中"
@@ -664,6 +667,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "充电指令",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未接收到充电指令",
             1: "接收到充电指令"
@@ -673,8 +677,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 11,
           bit_length: 1,
-          bit_name: "充电指令完成状态",
+          bit_name: "充电指令完成",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "充电闭合未完成",
             1: "充电闭合完成"
@@ -686,6 +691,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "放电指令",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未接收到放电指令",
             1: "接收到放电指令"
@@ -695,8 +701,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 13,
           bit_length: 1,
-          bit_name: "放电指令完成状态",
+          bit_name: "放电指令完成",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "放电闭合未完成",
             1: "放电闭合完成"
@@ -708,6 +715,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "脱离母线指令",
           bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "未接收到脱离母线指令",
             1: "接收到脱离母线指令"
@@ -717,8 +725,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 15,
           bit_length: 1,
-          bit_name: "脱离母线指令完成状态",
-          bit_value_type: "bit",
+          bit_name: "脱离母线指令完成",
+          bit_value_type: "bit_mapping",
+          display_mode: "nameHighLightWithBitRaw",
           bit_mapping: {
             0: "断开接触器未完成",
             1: "断开接触器完成"
@@ -730,6 +739,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "运维模式",
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "非运维模式",
             1: "运维模式"
@@ -741,6 +751,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "测试模式",
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "正常模式",
             1: "测试模式"
@@ -752,6 +763,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 1,
           bit_name: "初始化状态",
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "初始化完成",
             1: "正在初始化"
@@ -765,8 +777,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 2,
           bit_name: "高压允许闭合状态",
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
-            0: "初始状态",
+            0: "高压初始化中",
             1: "不允许闭合高压",
             2: "允许闭合高压"
           }
@@ -777,8 +790,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 2,
           bit_name: "分励脱扣动作",
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
-            0: "初始状态",
+            0: "分励脱扣初始化中",
             1: "未执行脱扣动作",
             2: "已执行脱扣动作"
           }
@@ -791,6 +805,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           bit_value_type: "reg_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0x5bb5: "有效",
             0x1221: "无效"
@@ -804,6 +819,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           bit_value_type: "reg_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0x5bb5: "有效",
             0x1221: "无效"
@@ -817,6 +833,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 1,
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "无故障",
             1: "有故障"
@@ -827,6 +844,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 1,
           bit_length: 7,
           bit_value_type: "bit_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             1: "存储错误",
             2: "过流检测",
@@ -847,6 +865,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           bit_value_type: "reg_mapping",
+          display_mode: "mappingValue",
           bit_mapping: {
             0: "系统正常",
             1: "系统重启"
@@ -1082,7 +1101,35 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_offset: params_irregular_props.cluster_summary.data_offset,
     data_word_length: params_irregular_props.cluster_summary.data_word_length,
     data_bit_config: params_irregular_props.cluster_summary.data_bit_config,
-    data_unit: params_irregular_props.cluster_summary.data_unit
+    data_unit: params_irregular_props.cluster_summary.data_unit,
+    data_isHiden: params_irregular_props.cluster_summary.data_name.map(item => {
+      const hidenParamsName = [
+        "充电SOP有效校验标识",
+        "充电SOP-MAP表坐标列",
+        "充电SOP-MAP表坐标行",
+        "放电SOP有效校验标识",
+        "放电SOP-MAP表坐标列",
+        "放电SOP-MAP表坐标行",
+        "CAN霍尔传感器状态信息",
+        "CAN霍尔传感器名称",
+        "CAN霍尔传感器软件版本",
+        "预留",
+        "周期任务堆栈大小",
+        "系统堆栈空间",
+        "系统堆栈最小空间",
+        "可配置默认参数剩余次数",
+        "BCU产品编码",
+        "BCU硬件版本号",
+        "BCU软件版本号",
+        "BCU-BOOT版本号",
+        "BCU-BAU协议版本号",
+        "BCU-BMU协议版本号",
+        "BCU事件记录版本号",
+        "BCU-sox算法版本号",
+        "可配置默认参数版本号"
+      ];
+      return hidenParamsName.includes(item);
+    })
   },
   pack_summary: {
     data_name: params_irregular_props.pack_summary.data_name,
@@ -1357,7 +1404,8 @@ function getTemplate(cls: ClassTable): BuildTemplate {
           data_word_length: props.data_word_length?.[i],
           data_bit_config: props.data_bit_config?.[i],
           data_unit: props.data_unit?.[i],
-          data_value: 0
+          data_value: 0,
+          data_isHiden: props.data_isHiden?.[i]
         };
     slices[i] = { start: dataIndex, length: wordLength };
     dataIndex += wordLength;
