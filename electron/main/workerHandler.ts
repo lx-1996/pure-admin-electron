@@ -1,7 +1,7 @@
 ﻿import { fork, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import type { WorkerMessage } from "./worker/types/worker";
-type SendToRenderer = (channel: string, data: unknown) => void;
+type SendToRenderer = (channel: string, data: object) => void;
 let worker: ChildProcess | null = null;
 function startWorker(sendToRenderer: SendToRenderer, dirname: any) {
   const workerPath = join(dirname, "worker.js");
@@ -9,7 +9,11 @@ function startWorker(sendToRenderer: SendToRenderer, dirname: any) {
   worker.on("message", message => {
     const msg = message as WorkerMessage;
     //console.log(msg)
-    sendToRenderer(msg.type, msg.data);
+    const dataToRenderer = {
+      data: msg.data,
+      ip: msg.ip
+    };
+    sendToRenderer(msg.type, dataToRenderer);
   });
   worker.on("error", error => {
     console.error("Worker 错误:", error);

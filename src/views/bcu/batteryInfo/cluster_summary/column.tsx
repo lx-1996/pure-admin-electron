@@ -29,13 +29,13 @@ function isBitActive(value: any) {
 
 export function useCol() {
   const data = ref<Array<Record<string, any>>>([]);
+  const dataWithFilter = ref<Array<Record<string, any>>>([]);
   const updatedAt = ref("");
   let listenerId: number | null = null;
 
-  function onData(_event: any, value: any) {
-    data.value = Array.isArray(value)
-      ? value.filter((item: any) => !item?.data_isHiden)
-      : [];
+  function onData(_event: any, dataFromMain: any) {
+    data.value = Array.isArray(dataFromMain.data) ? dataFromMain.data : [];
+    dataWithFilter.value = data.value.filter(item => !item.data_isHiden);
     updatedAt.value = new Date().toLocaleTimeString("zh-CN", {
       hour12: false
     });
@@ -54,21 +54,23 @@ export function useCol() {
 
   /** 系统总状态位：独占一行，置于首位 */
   const sysStatusData = computed(() =>
-    data.value.filter(
+    dataWithFilter.value.filter(
       item => isBits(item) && item.data_name === SYS_STATUS_NAME
     )
   );
 
   /** 其余状态位：一行 2 个 */
   const bitData = computed(() =>
-    data.value.filter(
+    dataWithFilter.value.filter(
       item => isBits(item) && item.data_name !== SYS_STATUS_NAME
     )
   );
 
   /** 遥测值：data_parsed 为标量 */
   const scalarData = computed(() =>
-    data.value.filter(item => !isBits(item) && !Array.isArray(item.data_parsed))
+    dataWithFilter.value.filter(
+      item => !isBits(item) && !Array.isArray(item.data_parsed)
+    )
   );
 
   const getDisplayMode = (value: any) => {
@@ -86,7 +88,7 @@ export function useCol() {
   const fmtUnit = (unit?: string) => (unit && unit !== "/" ? unit : "");
 
   return {
-    data,
+    dataWithFilter,
     sysStatusData,
     bitData,
     scalarData,

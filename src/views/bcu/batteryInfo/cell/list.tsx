@@ -1,7 +1,7 @@
-﻿import CellVltg from "./cellvltg/index.vue";
-import CellTemp from "./celltemp/index.vue";
-import CellSOC from "./cellsoc/index.vue";
-import CellSOH from "./cellsoh/index.vue";
+﻿import CellVltg from "./cellVltg.vue";
+import CellTemp from "./cellTemp.vue";
+import CellSOC from "./cellSOC.vue";
+import CellSOH from "./cellSOH.vue";
 // import System_summary from "./system_summary/index.vue";
 // import Cluster_summary from "./cluster_summary/index.vue";
 // import Pack_summary from "./pack_summary/index.vue";

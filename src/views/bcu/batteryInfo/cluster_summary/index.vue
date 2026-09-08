@@ -11,7 +11,7 @@
     </div> -->
 
     <el-empty
-      v-if="!data.length"
+      v-if="!dataWithFilter.length"
       description="等待下位机数据…"
       :image-size="80"
     />
@@ -110,7 +110,7 @@ defineOptions({
 });
 
 const {
-  data,
+  dataWithFilter,
   bitData,
   scalarData,
   sysStatusData,

@@ -76,9 +76,8 @@ export function useColumns() {
   }
   let listenerId: number | null = null;
 
-  function onData(_event: any, value: any) {
-    console.log(value);
-    data.value = Array.isArray(value) ? value : [];
+  function onData(_event: any, dataFromMain: any) {
+    data.value = Array.isArray(dataFromMain.data) ? dataFromMain.data : [];
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;

@@ -14,7 +14,7 @@ const {
   adaptiveConfig,
   onCurrentChange,
   onSizeChange
-} = useColumns();
+} = useColumns("cell_temp");
 </script>
 
 <template>

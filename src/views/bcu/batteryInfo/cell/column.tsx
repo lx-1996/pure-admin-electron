@@ -5,10 +5,10 @@
 } from "@pureadmin/table";
 import { ref, reactive, onBeforeMount, onBeforeUnmount, computed } from "vue";
 import { delay } from "@pureadmin/utils";
-export function useColumns() {
+export function useColumns(dataType: string) {
   const data = ref<Array<Record<string, any>>>([]);
-  const columnNum = ref(12);
   const loading = ref(true);
+  const columnNum = ref(12);
   const columns = computed(() => {
     return [
       {
@@ -55,10 +55,10 @@ export function useColumns() {
     /** 表格距离页面底部的偏移量，默认值为 `96` */
     offsetBottom: 110
     /** 是否固定表头，默认值为 `true`（如果不想固定表头，fixHeader设置为false并且表格要设置table-layout="auto"） */
-    // fixHeader: true,
-    // /** 页面 `resize` 时的防抖时间，默认值为 `60` ms */
-    // timeout: 60,
-    // /** 表头的 `z-index`，默认值为 `100` */
+    // fixHeader: true
+    /** 页面 `resize` 时的防抖时间，默认值为 `60` ms */
+    // timeout: 60
+    /** 表头的 `z-index`，默认值为 `100` */
     // zIndex: 100
   };
   function onCurrentChange(val) {
@@ -73,16 +73,18 @@ export function useColumns() {
   }
   let listenerId: number | null = null;
 
-  function onData(_event: any, value: any) {
-    console.log(value);
-    data.value = Array.isArray(value.data) ? value.data : [];
-    columnNum.value = value?.maxCellsPerAFE;
+  function onData(_event: any, dataFromMain: any) {
+    //console.log("cell_soc");
+    data.value = Array.isArray(dataFromMain.data.data)
+      ? dataFromMain.data.data
+      : [];
+    columnNum.value = dataFromMain.data?.maxCellsPerAFE;
     loading.value = false;
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
   }
   onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("cell_vltg", onData);
+    listenerId = window.ipcRenderer.on(dataType, onData);
   });
 
   onBeforeUnmount(() => {
