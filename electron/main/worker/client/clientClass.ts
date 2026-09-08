@@ -1,12 +1,12 @@
 ﻿import ModbusRTU from "modbus-serial";
 interface ModbusTCPClientProps {
   client: ModbusRTU;
-  client_status: "disconnected" | "connected" | "connecting";
-  client_host: string;
-  client_port: number;
-  client_timeout: number;
-  client_reconnect_times: number;
-  client_heatbeat: number;
+  connectStatus: "disconnected" | "connected" | "connecting";
+  host: string;
+  port: number;
+  timeout: number;
+  reconnectTimes: number;
+  heatbeat: number;
 }
 export interface ThisClientBMUConfigData {
   bmu_total: number;
@@ -32,12 +32,12 @@ export class ModbusTCPClient {
     this.client = new ModbusRTU();
     this.clientProps = {
       client: this.client,
-      client_status: "disconnected",
-      client_host: ip,
-      client_port: port,
-      client_timeout: timeout,
-      client_reconnect_times: 0,
-      client_heatbeat: 0
+      connectStatus: "disconnected",
+      host: ip,
+      port: port,
+      timeout: timeout,
+      reconnectTimes: 0,
+      heatbeat: 0
     };
     this.client_data = {
       bmu_config: {
@@ -57,42 +57,42 @@ export class ModbusTCPClient {
     if (this.client.isOpen) {
       this.client.close();
     }
-    this.clientProps.client_status = "connecting";
-    console.log(this.clientProps.client_host, "正在连接");
+    this.clientProps.connectStatus = "connecting";
+    console.log(this.clientProps.host, "正在连接");
     try {
-      await this.client.connectTCP(this.clientProps.client_host, {
-        port: this.clientProps.client_port,
-        timeout: this.clientProps.client_timeout
+      await this.client.connectTCP(this.clientProps.host, {
+        port: this.clientProps.port,
+        timeout: this.clientProps.timeout
       });
       await this.client.readInputRegisters(0, 1);
-      this.clientProps.client_reconnect_times = 0;
+      this.clientProps.reconnectTimes = 0;
       console.log(
-        this.clientProps.client_host,
+        this.clientProps.host,
         "连接成功，连接次数:",
-        this.clientProps.client_reconnect_times
+        this.clientProps.reconnectTimes
       );
-      this.clientProps.client_status = "connected";
+      this.clientProps.connectStatus = "connected";
       this.heartbeat();
     } catch (e) {
       console.log(
-        this.clientProps.client_host,
+        this.clientProps.host,
         "连接失败，连接次数:",
-        this.clientProps.client_reconnect_times,
+        this.clientProps.reconnectTimes,
         e
       );
       await this.repeatConnect();
     }
   }
   async repeatConnect() {
-    if (this.clientProps.client_reconnect_times >= this.MAX_CONNECT_TIMES) {
+    if (this.clientProps.reconnectTimes >= this.MAX_CONNECT_TIMES) {
       console.log("连接次数达到最大限制，停止重连");
       return;
     }
-    this.clientProps.client_reconnect_times++;
+    this.clientProps.reconnectTimes++;
     await this.connect();
   }
   heartbeat() {
-    if (this.clientProps.client_status != "connected") {
+    if (this.clientProps.connectStatus != "connected") {
       console.log("TCP客户端未连接，心跳终止");
       return;
     }
@@ -100,11 +100,11 @@ export class ModbusTCPClient {
     const timerId = setInterval(async () => {
       try {
         await this.client.readInputRegisters(0, 1);
-        this.clientProps.client_heatbeat++;
+        this.clientProps.heatbeat++;
       } catch (e) {
         console.error("心跳读取失败", e);
         clearInterval(timerId);
-        this.clientProps.client_status = "disconnected";
+        this.clientProps.connectStatus = "disconnected";
         await this.repeatConnect();
       }
     }, this.HEARTBEAT_INTERVAL);

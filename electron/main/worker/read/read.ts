@@ -2,7 +2,7 @@
 import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
 import type { ClassType } from "../types/dataPoint";
 import type { WorkerDataMessage } from "../types/worker";
-import { parse_raw_data, getCellIdx } from "../dataPoint/parse";
+import { parse_raw_data, getCellIdx, getPackData } from "../dataPoint/parse";
 import { writeLog } from "../logger";
 import type { ThisClientBMUConfigData } from "../client/clientClass";
 const READ_PARAMS = {
@@ -10,6 +10,7 @@ const READ_PARAMS = {
   READ_INTERVAL: 1000
 };
 const CellClass = ["cell_vltg", "cell_temp", "cell_soc", "cell_soh"];
+const PackClass = ["pack_summary"];
 
 async function repeatRead(
   client: ModbusTCPClient,
@@ -39,7 +40,7 @@ export async function readData(
 ) {
   const filedsMap = classes_fieldsMap[data_class];
   let addr_num;
-  if (bmu_config) {
+  if (CellClass.includes(data_class) && bmu_config) {
     if (data_class == "cell_temp") addr_num = bmu_config.total_temp_num;
     else addr_num = bmu_config.total_cell_num;
   } else addr_num = filedsMap.addr_num;
@@ -54,13 +55,22 @@ export async function readData(
     const data_parsed = parse_raw_data(data_build);
     if (CellClass.includes(data_class) && bmu_config) {
       const isTemp = data_class === "cell_temp";
-      const cell_data = getCellIdx(bmu_config, data_parsed, isTemp);
+      const cellData = getCellIdx(bmu_config, data_parsed, isTemp);
       //writeLog("index", parsedData);
       //console.log("afeIndex", idxRes.afeIndex);
       // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
       const message: WorkerDataMessage = {
         type: data_class,
-        data: cell_data
+        data: cellData,
+        ip: client.clientProps.host
+      };
+      process.send?.(message);
+    } else if (PackClass.includes(data_class) && bmu_config) {
+      const packData = getPackData(bmu_config, data_parsed);
+      const message: WorkerDataMessage = {
+        type: data_class,
+        data: packData,
+        ip: client.clientProps.host
       };
       process.send?.(message);
     }
@@ -68,7 +78,8 @@ export async function readData(
     else {
       const message: WorkerDataMessage = {
         type: data_class,
-        data: data_parsed
+        data: data_parsed,
+        ip: client.clientProps.host
       };
       process.send?.(message);
     }

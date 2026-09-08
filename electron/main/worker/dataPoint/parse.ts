@@ -343,4 +343,46 @@ function getCellIdx(
 [86,99]属于afe4,
   */
 }
-export { parse_raw_data, getCellIdx };
+function getPackData(
+  bmu_config: ThisClientBMUConfigData,
+  data: table.Build_data[]
+) {
+  const { bmu_total, afe_perBMU } = bmu_config;
+  return data.map(item => {
+    switch (item.data_name) {
+      case "单向菊花链断连位置":
+      case "BMU版本号":
+      case "BMU动力接插件温度": {
+        if (item.data_parsed && Array.isArray(item.data_parsed)) {
+          return {
+            ...item,
+            data_parsed: item.data_parsed.slice(0, bmu_total * 2)
+          };
+        }
+      }
+      case "BMU电压":
+      case "BMU电路板温度":
+      case "BMU-SOC":
+      case "BMU产品编码":
+      case "BMU重启标志": {
+        if (item.data_parsed && Array.isArray(item.data_parsed)) {
+          return {
+            ...item,
+            data_parsed: item.data_parsed.slice(0, bmu_total)
+          };
+        }
+      }
+      case "铜牌温度": {
+        if (item.data_parsed && Array.isArray(item.data_parsed)) {
+          return {
+            ...item,
+            data_parsed: item.data_parsed.slice(0, afe_perBMU * bmu_total)
+          };
+        }
+      }
+      default:
+        return { ...item };
+    }
+  });
+}
+export { parse_raw_data, getCellIdx, getPackData };

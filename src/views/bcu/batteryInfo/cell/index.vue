@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { list } from "./list";
 import { ref } from "vue";
 defineOptions({
-  name: "Welcome1"
+  name: "Cell"
 });
 const selected = ref(0);
 function tabClick({ index }) {

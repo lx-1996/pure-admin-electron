@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="cluster-page">
     <!-- <div class="cluster-page__header">
       <div class="cluster-page__title">
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { useCol } from "./test";
+import { useCol } from "./column";
 import ReCol from "@/components/ReCol";
 
 defineOptions({

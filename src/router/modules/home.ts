@@ -5,7 +5,7 @@ export default {
   path: "/",
   name: "Home",
   component: Layout,
-  redirect: "/welcome",
+  redirect: "/page1",
   meta: {
     icon: "ep/home-filled",
     title: "首页",
@@ -13,18 +13,19 @@ export default {
   },
   children: [
     {
-      path: "/welcome",
-      name: "Welcome",
-      component: () => import("@/views/welcome/index.vue"),
+      path: "/page1",
+      name: "Page1",
+      component: () => import("@/views/bcu/batteryInfo/index.vue"),
       meta: {
         title: "首页1",
         showLink: VITE_HIDE_HOME === "true" ? false : true
       }
     },
     {
-      path: "/welcome1",
-      name: "Welcome1",
-      component: () => import("@/views/welcome/cluster_summary/index.vue"),
+      path: "/page2",
+      name: "Page2",
+      component: () =>
+        import("@/views/bcu/batteryInfo/cluster_summary/index.vue"),
       meta: {
         title: "首页2"
       }
