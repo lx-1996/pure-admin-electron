@@ -189,61 +189,60 @@ function judge_data_type(
   // 其余类型（hex/float/未配置 data_type 等）返回 undefined，
   // 由 parse_raw_data 的 default 分支原样返回 data_value
 }
-function parse_raw_data(build_data: table.Build_data[]): table.Build_data[] {
+function parse_raw_data(build_data: table.Build_data[]) {
   // 解析失败直接上抛，由调用方（readData）的 try/catch 统一记录错误，
   // 避免静默吞错后向渲染进程发送 undefined 数据
   let parsed_data = [];
   parsed_data = build_data.map(item => {
-    const { data_type, data_res, data_offset, data_value, data_bit_config } =
-      item;
-    switch (judge_data_type(data_type, data_bit_config)) {
+    const { data_value, data_bit_config, ...rest } = item;
+    switch (judge_data_type(rest.data_type, data_bit_config)) {
       case "isUint16": {
         const data_parsed = parse_linear_uint16(
           Array.isArray(data_value) ? (data_value[0] ?? 0) : data_value,
           {
-            data_type,
-            data_res,
-            data_offset
+            data_type: rest.data_type,
+            data_res: rest.data_res,
+            data_offset: rest.data_offset
           }
         );
-        return { ...item, data_parsed };
+        return { ...rest, data_parsed };
       }
       case "isUint32": {
         const data_parsed = parse_linear_uint32(
           Array.isArray(data_value) ? data_value : [data_value],
           {
-            data_res,
-            data_offset
+            data_res: rest.data_res,
+            data_offset: rest.data_offset
           }
         );
-        return { ...item, data_parsed };
+        return { ...rest, data_parsed };
       }
       case "isASCII": {
         const data_parsed = parse_ascii(data_value);
-        return { ...item, data_parsed };
+        return { ...rest, data_parsed };
       }
       case "isBitfield": {
         // judge_data_type 已保证 data_bit_config 非空，此处防御性再判
         const data_parsed = data_bit_config?.length
           ? parse_bitfield_value(data_value, data_bit_config, {
-              data_type,
-              data_res,
-              data_offset
+              data_type: rest.data_type,
+              data_res: rest.data_res,
+              data_offset: rest.data_offset
             })
-          : undefined;
-        return { ...item, data_parsed };
+          : [];
+        return { ...rest, data_parsed };
       }
       default: {
-        return { ...item, data_parsed: item.data_value };
+        return { ...rest, data_parsed: data_value };
       }
     }
   });
   return parsed_data;
 }
 import type { ThisClientBMUConfigData } from "../client/clientClass";
-function getCellIdx(
+function getCellData(
   bmu_config: ThisClientBMUConfigData,
-  data: table.Build_data[],
+  data: table.Parsed_data[],
   isTemp: boolean
 ) {
   const {
@@ -345,14 +344,14 @@ function getCellIdx(
 }
 function getPackData(
   bmu_config: ThisClientBMUConfigData,
-  data: table.Build_data[]
+  data: table.Parsed_data[]
 ) {
   const { bmu_total, afe_perBMU } = bmu_config;
   return data.map(item => {
     switch (item.data_name) {
       case "单向菊花链断连位置":
       case "BMU版本号":
-      case "BMU动力接插件温度": {
+      case "动力接插件温度": {
         if (item.data_parsed && Array.isArray(item.data_parsed)) {
           return {
             ...item,
@@ -372,7 +371,7 @@ function getPackData(
           };
         }
       }
-      case "铜牌温度": {
+      case "铜排温度": {
         if (item.data_parsed && Array.isArray(item.data_parsed)) {
           return {
             ...item,
@@ -385,4 +384,10 @@ function getPackData(
     }
   });
 }
-export { parse_raw_data, getCellIdx, getPackData };
+// function getSysData(data: table.Parsed_data[]) {}
+export {
+  parse_raw_data,
+  getCellData,
+  getPackData
+  //getSysData
+};

@@ -11,7 +11,7 @@ function tabClick({ index }) {
 </script>
 
 <template>
-  <el-card shadow="never">
+  <el-card>
     <el-tabs @tab-click="tabClick">
       <template v-for="(item, index) of list" :key="item.key">
         <el-tab-pane :lazy="true">

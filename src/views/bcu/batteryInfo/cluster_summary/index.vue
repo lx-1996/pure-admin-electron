@@ -1,15 +1,5 @@
 <template>
-  <div class="cluster-page">
-    <!-- <div class="cluster-page__header">
-      <div class="cluster-page__title">
-        <span class="bar"></span>
-        簇级汇总
-      </div>
-      <el-tag v-if="updatedAt" size="small" effect="plain" type="info">
-        {{ data.length }} 项 · 更新于 {{ updatedAt }}
-      </el-tag>
-    </div> -->
-
+  <el-card class="cluster-page">
     <el-empty
       v-if="!dataWithFilter.length"
       description="等待下位机数据…"
@@ -17,18 +7,15 @@
     />
 
     <template v-else>
-      <!-- 状态位 -->
       <section
         v-if="sysStatusData.length || bitData.length"
         class="cluster-page__section"
       >
-        <!-- <h3 class="cluster-page__section-title">状态位</h3> -->
         <el-row :gutter="10" class="card-row">
-          <!-- 系统总状态位：独占一行，排在首位 -->
           <re-col
             v-for="(item, index) in sysStatusData"
             :key="`sys-${item.data_name ?? index}`"
-            v-bind="COL_SYS_STATUS"
+            :value="24"
           >
             <div class="bitcard bitcard--wide">
               <div class="bitcard__title" :title="item.data_name">
@@ -47,12 +34,10 @@
               </div>
             </div>
           </re-col>
-
-          <!-- 其余状态位：一行 2 个 -->
           <re-col
             v-for="(item, index) in bitData"
             :key="`b-${item.data_name ?? index}`"
-            v-bind="COL_BITS"
+            :value="6"
           >
             <div class="bitcard">
               <div class="bitcard__title" :title="item.data_name">
@@ -74,14 +59,12 @@
         </el-row>
       </section>
 
-      <!-- 遥测值 -->
       <section v-if="scalarData.length" class="cluster-page__section">
-        <!-- <h3 class="cluster-page__section-title">遥测值</h3> -->
         <el-row :gutter="10" class="card-row">
           <re-col
             v-for="(item, index) in scalarData"
             :key="`s-${item.data_name ?? index}`"
-            v-bind="COL_SCALAR"
+            :value="2"
           >
             <div class="metric">
               <div class="metric__name" :title="item.data_name">
@@ -98,7 +81,7 @@
         </el-row>
       </section>
     </template>
-  </div>
+  </el-card>
 </template>
 
 <script setup lang="ts">
@@ -106,7 +89,7 @@ import { useCol } from "./column";
 import ReCol from "@/components/ReCol";
 
 defineOptions({
-  name: "Test"
+  name: "Page2"
 });
 
 const {
@@ -115,9 +98,6 @@ const {
   scalarData,
   sysStatusData,
   updatedAt,
-  COL_SYS_STATUS,
-  COL_BITS,
-  COL_SCALAR,
   getDisplayMode,
   isBitActive,
   fmtUnit
@@ -126,8 +106,6 @@ const {
 
 <style lang="scss" scoped>
 .cluster-page {
-  padding: 10px 12px;
-
   &__header {
     display: flex;
     align-items: center;
@@ -167,7 +145,7 @@ const {
 
 /* el-row 的 gutter 只作用于水平方向，多行时需用 row-gap 补垂直间距 */
 .card-row {
-  row-gap: 10px;
+  row-gap: 2px;
 }
 
 .metric,
@@ -204,7 +182,7 @@ const {
   }
 
   &__num {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     line-height: 1.25;
@@ -222,7 +200,7 @@ const {
   flex-direction: column;
 
   &__title {
-    margin-bottom: 6px;
+    margin-bottom: 3px;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 12px;
@@ -240,21 +218,20 @@ const {
   }
 
   /* 系统总状态位：独占整行，chip 全部展开不滚动 */
-  &--wide {
-    padding: 10px 12px;
-    background: var(--el-fill-color-lighter);
-  }
+  // &--wide {
+  //   padding: 10px 12px;
+  // }
 
-  &__body--wide {
-    gap: 6px;
-    max-height: none;
-    overflow: visible;
-  }
+  // &__body--wide {
+  //   gap: 6px;
+  //   max-height: none;
+  //   overflow: visible;
+  // }
 }
 
 .chip {
-  padding: 1px 6px;
-  font-size: 12px;
+  padding: 1px 3px;
+  font-size: 13px;
   line-height: 18px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-light);

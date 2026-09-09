@@ -82,8 +82,8 @@ const SHARE = {
   },
   names_connectT(n: number): string[] {
     return Array.from({ length: n }, (_, i) => [
-      `BMU${i + 1}-1号动力接插件温度`,
-      `BMU${i + 1}-2号动力接插件温度`
+      `BMU${i + 1}-1`,
+      `BMU${i + 1}-2`
     ]).flat();
   },
   names_bmuVersion(n: number): string[] {
@@ -110,6 +110,34 @@ const SHARE = {
       `${prefix}_极差值`,
       "预留",
       "预留"
+    ];
+  },
+  names_system_summary_data_class() {
+    return [
+      ...new Array(14).fill("单体电压"),
+      "/",
+      "/",
+      ...new Array(14).fill("单体温度"),
+      "/",
+      "/",
+      ...new Array(14).fill("BMU电压"),
+      "/",
+      "/",
+      ...new Array(14).fill("BMU电路板温度"),
+      "/",
+      "/",
+      ...new Array(14).fill("单体SOC"),
+      "/",
+      "/",
+      ...new Array(14).fill("单体SOH"),
+      "/",
+      "/",
+      ...new Array(14).fill("动力接插件温度"),
+      "/",
+      "/",
+      ...new Array(14).fill("铜排温度"),
+      "/",
+      "/"
     ];
   },
   /** uint16 类型常量列 */
@@ -257,9 +285,10 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...SHARE.names_system_summary("单体SOC"),
       ...SHARE.names_system_summary("单体SOH"),
       ...SHARE.names_system_summary("动力接插件温度"),
-      ...SHARE.names_system_summary("AFE铜排温度")
+      ...SHARE.names_system_summary("铜排温度")
       //...SHARE.reserved(16)
     ],
+    data_class: SHARE.names_system_summary_data_class(),
     data_type: params_data_type.system_summary.map(item => item.data_type),
     data_word_length: params_data_type.system_summary.map(
       item => item.data_word_length
@@ -909,11 +938,11 @@ const params_irregular_props: Record<string, Irregular_props> = {
       "电芯温度断线数量",
       "BMU电压",
       "BMU电路板温度",
-      "BMU动力接插件温度",
+      "动力接插件温度",
       "BMU版本号",
       "BMU-SOC",
       "BMU产品编码",
-      "铜牌温度",
+      "铜排温度",
       "BMU重启标志"
       //...SHARE.reserved(154)
     ],
@@ -944,7 +973,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
       Array.from({ length: 32 }, (_, index) => {
         return {
           reg_idx: index,
-          bit_name: `BMU${index + 1}电压`,
+          bit_name: `BMU${index + 1}`,
           reg_type: "uint16",
           bit_value_type: "reg_value"
         };
@@ -952,7 +981,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
       Array.from({ length: 32 }, (_, index) => {
         return {
           reg_idx: index,
-          bit_name: `BMU${index + 1}电路板温度`,
+          bit_name: `BMU${index + 1}`,
           reg_type: "int16",
           bit_value_type: "reg_value"
         };
@@ -985,7 +1014,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           reg_type: "uint16",
-          bit_name: `BMU${index + 1}SOC`,
+          bit_name: `BMU${index + 1}`,
           bit_value_type: "reg_value"
         };
       }),
@@ -994,7 +1023,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           return {
             reg_idx: index * 7,
             reg_length: 7,
-            bit_name: `BMU${index + 1}产品编码`,
+            bit_name: `BMU${index + 1}`,
             bit_value_type: "reg_value_hex"
           };
         })
@@ -1005,7 +1034,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_offset: 0,
           bit_length: 16,
           reg_type: "int16",
-          bit_name: `AFE${index + 1}铜牌温度`,
+          bit_name: `AFE${index + 1}`,
           bit_value_type: "reg_value"
         };
       }),
@@ -1016,7 +1045,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
             reg_idx: 0,
             bit_offset: 0,
             bit_length: 1,
-            bit_name: `BMU${index + 1}重启标志`,
+            bit_name: `BMU${index + 1}`,
             bit_value_type: "bit_mapping",
             bit_mapping: {
               0: "重启初始化完成",
@@ -1029,7 +1058,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
             reg_idx: 1,
             bit_offset: 0,
             bit_length: 1,
-            bit_name: `BMU${index + 17}重启标志`,
+            bit_name: `BMU${index + 17}`,
             bit_value_type: "bit_mapping",
             bit_mapping: {
               0: "重启初始化完成",
@@ -1046,7 +1075,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...SHARE.res_1(1), //BMU版本号
       ...SHARE.res_0_1(1), //BMU SOC
       ...SHARE.res_1(1), //BMU产品编码
-      ...SHARE.res_0_1(1), //铜牌温度
+      ...SHARE.res_0_1(1), //铜排温度
       ...SHARE.res_1(1) //BMU重启标志
       //...SHARE.res_1(155)
     ],
@@ -1092,7 +1121,12 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_res: params_irregular_props.system_summary.data_res,
     data_offset: SHARE.zero(ADDR_NUM_MAP_WITHOUT_RES.system_summary),
     data_unit: params_irregular_props.system_summary.data_unit,
-    data_word_length: params_irregular_props.system_summary.data_word_length
+    data_word_length: params_irregular_props.system_summary.data_word_length,
+    data_isHiden: params_irregular_props.system_summary.data_name.map(item => {
+      const hidenParamsName = ["预留"];
+      return hidenParamsName.includes(item);
+    }),
+    data_class: params_irregular_props.system_summary.data_class
   },
   cluster_summary: {
     data_name: params_irregular_props.cluster_summary.data_name,
@@ -1405,7 +1439,8 @@ function getTemplate(cls: ClassTable): BuildTemplate {
           data_bit_config: props.data_bit_config?.[i],
           data_unit: props.data_unit?.[i],
           data_value: 0,
-          data_isHiden: props.data_isHiden?.[i]
+          data_isHiden: props.data_isHiden?.[i],
+          data_class: props.data_class?.[i]
         };
     slices[i] = { start: dataIndex, length: wordLength };
     dataIndex += wordLength;

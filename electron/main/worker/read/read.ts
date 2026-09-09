@@ -2,7 +2,12 @@
 import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
 import type { ClassType } from "../types/dataPoint";
 import type { WorkerDataMessage } from "../types/worker";
-import { parse_raw_data, getCellIdx, getPackData } from "../dataPoint/parse";
+import {
+  parse_raw_data,
+  getCellData,
+  getPackData
+  //getSysData
+} from "../dataPoint/parse";
 import { writeLog } from "../logger";
 import type { ThisClientBMUConfigData } from "../client/clientClass";
 const READ_PARAMS = {
@@ -55,7 +60,7 @@ export async function readData(
     const data_parsed = parse_raw_data(data_build);
     if (CellClass.includes(data_class) && bmu_config) {
       const isTemp = data_class === "cell_temp";
-      const cellData = getCellIdx(bmu_config, data_parsed, isTemp);
+      const cellData = getCellData(bmu_config, data_parsed, isTemp);
       //writeLog("index", parsedData);
       //console.log("afeIndex", idxRes.afeIndex);
       // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
@@ -74,6 +79,9 @@ export async function readData(
       };
       process.send?.(message);
     }
+    // else if (data_class === "system_summary") {
+    //   const sysData = getSysData(data_parsed);
+    // }
     // writeLog(data_class, data_parsed);
     else {
       const message: WorkerDataMessage = {

@@ -1,42 +1,28 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useColumns } from "./column";
+import { useColumns } from "./getCellData";
+import SysDataChild from "../system_summary/index.vue";
 defineOptions({
   name: "Welcome"
 });
 const tableRef = ref();
-const {
-  loading,
-  columns,
-  data,
-  pagination,
-  loadingConfig,
-  adaptiveConfig,
-  onCurrentChange,
-  onSizeChange
-} = useColumns("cell_soh");
+const { loading, columns, dataSelectedIp, loadingConfig } =
+  useColumns("cell_soh");
 </script>
 
 <template>
-  <pure-table
-    ref="tableRef"
-    border
-    adaptive
-    :adaptiveConfig="adaptiveConfig"
-    row-key="id"
-    alignWhole="center"
-    showOverflowTooltip
-    :loading="loading"
-    :loading-config="loadingConfig"
-    :data="
-      data.slice(
-        (pagination.currentPage - 1) * pagination.pageSize,
-        pagination.currentPage * pagination.pageSize
-      )
-    "
-    :columns="columns"
-    :pagination="pagination"
-    @page-size-change="onSizeChange"
-    @page-current-change="onCurrentChange"
-  />
+  <div>
+    <SysDataChild dataClass="单体SOH" />
+    <pure-table
+      ref="tableRef"
+      border
+      row-key="id"
+      alignWhole="center"
+      showOverflowTooltip
+      :loading="loading"
+      :loading-config="loadingConfig"
+      :data="dataSelectedIp.data"
+      :columns="columns"
+    />
+  </div>
 </template>

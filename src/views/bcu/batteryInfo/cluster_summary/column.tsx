@@ -3,13 +3,6 @@
 /** 需要独占一行的点名 */
 const SYS_STATUS_NAME = "系统总状态位";
 
-/** 系统总状态位：独占整行 */
-const COL_SYS_STATUS = { value: 24, xs: 24, sm: 24, md: 24, lg: 24, xl: 24 };
-/** 其余状态位：一行 2 个 */
-const COL_BITS = { value: 12, xs: 24, sm: 24, md: 12, lg: 6, xl: 6 };
-/** 数值型（遥测值）卡片占宽更小 */
-const COL_SCALAR = { value: 4, xs: 12, sm: 8, md: 6, lg: 3, xl: 3 };
-
 /** 该项是否为位域/状态位（data_parsed 为数组且非空） */
 function isBits(item: any) {
   return Array.isArray(item?.data_parsed) && item.data_parsed.length > 0;
@@ -94,9 +87,6 @@ export function useCol() {
     scalarData,
     updatedAt,
     isBits,
-    COL_SYS_STATUS,
-    COL_BITS,
-    COL_SCALAR,
     getDisplayMode,
     isBitActive,
     fmtUnit

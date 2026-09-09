@@ -8,7 +8,7 @@ async function initTCPClient(tcpOption: any) {
   await modbusTCPClient.repeatConnect();
 }
 const TCP_PARAMS = {
-  IP: "127.0.0.1",
+  IP: "192.168.10.208",
   PORT: 502,
   TIMEOUT: 10000
 };
