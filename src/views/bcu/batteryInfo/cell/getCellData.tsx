@@ -6,7 +6,7 @@ interface CellData {
 }
 export function useColumns(dataType: string) {
   const dataAllIps = ref<Map<string, CellData>>(new Map());
-  const selectedIp = ref<string>("192.168.10.208");
+  const selectedIp = ref<string>("127.0.0.1");
   const dataSelectedIp = computed(() => {
     return (
       dataAllIps.value.get(selectedIp.value) ?? {

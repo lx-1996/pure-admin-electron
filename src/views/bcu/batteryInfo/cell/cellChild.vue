@@ -5,14 +5,25 @@ import SysDataChild from "../system_summary/index.vue";
 defineOptions({
   name: "Welcome"
 });
+const props = defineProps({
+  cellDataClass: {
+    type: String,
+    default: "cell_vltg"
+  },
+  sysDataClass: {
+    type: String,
+    default: "单体电压"
+  }
+});
 const tableRef = ref();
-const { loading, columns, dataSelectedIp, loadingConfig } =
-  useColumns("cell_temp");
+const { loading, columns, dataSelectedIp, loadingConfig } = useColumns(
+  props.cellDataClass
+);
 </script>
 
 <template>
   <div class="flex flex-col gap-1">
-    <SysDataChild dataClass="单体温度" />
+    <SysDataChild :dataClass="props.sysDataClass" />
     <pure-table
       ref="tableRef"
       border
@@ -23,6 +34,7 @@ const { loading, columns, dataSelectedIp, loadingConfig } =
       :loading-config="loadingConfig"
       :data="dataSelectedIp.data"
       :columns="columns"
+      height="100%"
     />
   </div>
 </template>

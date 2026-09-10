@@ -1,13 +1,7 @@
-﻿import CellVltg from "./cellVltg.vue";
-import CellTemp from "./cellTemp.vue";
-import CellSOC from "./cellSOC.vue";
-import CellSOH from "./cellSOH.vue";
+﻿import CellData from "./cellChild.vue";
 import { defineComponent, h, type Component } from "vue";
 import BMUDataChild from "../pack_summary/index.vue";
 import SysDataChild from "../system_summary/index.vue";
-// import System_summary from "./system_summary/index.vue";
-// import Cluster_summary from "./cluster_summary/index.vue";
-// import Pack_summary from "./pack_summary/index.vue";
 const bmu = (dataClass: string): Component =>
   defineComponent({
     name: `BMU-${dataClass}`,
@@ -17,26 +11,31 @@ const bmu = (dataClass: string): Component =>
         h(BMUDataChild, { dataClass })
       ])
   });
+const cell = (cellDataClass: string, sysDataClass: string): Component =>
+  defineComponent({
+    name: `Cell-${cellDataClass}`,
+    setup: () => () => h(CellData, { cellDataClass, sysDataClass })
+  });
 export const list: { key: string; title: string; component: Component }[] = [
   {
     key: "cell_vltg",
     title: "单体电压(V)",
-    component: CellVltg
+    component: cell("cell_vltg", "单体电压")
   },
   {
     key: "cell_temp",
     title: "单体温度(℃)",
-    component: CellTemp
+    component: cell("cell_temp", "单体温度")
   },
   {
     key: "cell_soc",
     title: "单体SOC(%)",
-    component: CellSOC
+    component: cell("cell_soc", "单体SOC")
   },
   {
     key: "cell_soh",
     title: "单体SOH(%)",
-    component: CellSOH
+    component: cell("cell_soh", "单体SOH")
   },
   {
     key: "bmu_vltg",
