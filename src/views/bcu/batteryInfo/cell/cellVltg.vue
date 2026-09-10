@@ -11,7 +11,7 @@ const { loading, columns, dataSelectedIp, loadingConfig } =
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-1">
     <SysDataChild dataClass="单体电压" />
     <pure-table
       ref="tableRef"

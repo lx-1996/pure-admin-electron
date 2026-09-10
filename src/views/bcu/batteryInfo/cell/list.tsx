@@ -12,7 +12,10 @@ const bmu = (dataClass: string): Component =>
   defineComponent({
     name: `BMU-${dataClass}`,
     setup: () => () =>
-      h("div", [h(SysDataChild, { dataClass }), h(BMUDataChild, { dataClass })])
+      h("div", { class: "flex flex-col gap-1" }, [
+        h(SysDataChild, { dataClass }),
+        h(BMUDataChild, { dataClass })
+      ])
   });
 export const list: { key: string; title: string; component: Component }[] = [
   {

@@ -13,19 +13,7 @@ const selected = ref(0);
 </script>
 
 <template>
-  <!-- <el-card shadow="never">
-    <el-tabs @tab-click="tabClick">
-      <template v-for="(item, index) of list" :key="item.key">
-        <el-tab-pane :lazy="true">
-          <template #label>
-            <span>{{ item.title }}</span>
-          </template>
-          <component :is="item.component" v-if="selected == index" />
-        </el-tab-pane>
-      </template>
-    </el-tabs>
-  </el-card> -->
-  <div>
+  <div class="flex flex-col gap-4">
     <Cluster_summary />
     <Cell />
   </div>

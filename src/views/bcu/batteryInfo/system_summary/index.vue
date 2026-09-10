@@ -65,7 +65,7 @@ const { dataSelectedIp } = useSysData(() => props.dataClass);
   }
 
   &__num {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     line-height: 1.25;

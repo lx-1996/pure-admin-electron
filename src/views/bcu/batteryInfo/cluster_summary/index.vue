@@ -64,7 +64,7 @@
           <re-col
             v-for="(item, index) in scalarData"
             :key="`s-${item.data_name ?? index}`"
-            :value="2"
+            :value="3"
           >
             <div class="metric">
               <div class="metric__name" :title="item.data_name">
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { useCol } from "./column";
+import { useCol } from "./getClusterData";
 import ReCol from "@/components/ReCol";
 
 defineOptions({
