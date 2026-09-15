@@ -65,7 +65,8 @@ export async function readData(
       //console.log("afeIndex", idxRes.afeIndex);
       // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
       const message: WorkerDataMessage = {
-        type: data_class,
+        type: "data",
+        class: data_class,
         data: cellData,
         ip: client.clientProps.host
       };
@@ -73,7 +74,8 @@ export async function readData(
     } else if (PackClass.includes(data_class) && bmu_config) {
       const packData = getPackData(bmu_config, data_parsed);
       const message: WorkerDataMessage = {
-        type: data_class,
+        type: "data",
+        class: data_class,
         data: packData,
         ip: client.clientProps.host
       };
@@ -85,7 +87,8 @@ export async function readData(
     // writeLog(data_class, data_parsed);
     else {
       const message: WorkerDataMessage = {
-        type: data_class,
+        type: "data",
+        class: data_class,
         data: data_parsed,
         ip: client.clientProps.host
       };

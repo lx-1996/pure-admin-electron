@@ -6,7 +6,8 @@ interface ModbusTCPClientProps {
     | "connected"
     | "connecting"
     | "failRead"
-    | "notConnected";
+    | "notConnected"
+    | "cannotConnect";
   host: string;
   port: number;
   connectTimeout: number;

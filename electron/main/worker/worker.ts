@@ -36,7 +36,10 @@ async function initTCPClients(newClients: ClientOptions[]) {
     [...clients.values()].map(async item => {
       await item.repeatConnect();
       await start(item);
-      return item.clientProps;
+      // client 为 ModbusRTU 实例，内部含 socket/Timeout 等循环引用，
+      // 不可经 process.send 序列化，仅回传纯数据属性
+      const { client: _client, ...clientProps } = item.clientProps;
+      return clientProps;
     })
   );
   return res;
@@ -99,6 +102,13 @@ async function messageHandler(message: any) {
       });
       newClients = ips;
       const res = await initTCPClients(newClients);
+      process.send?.({
+        type: "event",
+        api: "set-ips",
+        args: {
+          payload: res
+        }
+      });
       console.log("最终结果:", res);
     }
   }
