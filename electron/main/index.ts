@@ -98,17 +98,17 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  initRendererHandler({ preload, url, indexHtml });
+  const worker = startWorker(
+    (channel, data) => win?.webContents.send(channel, data),
+    __dirname
+  );
+  initRendererHandler({ preload, url, indexHtml }, worker);
   await createWindow();
   // 必须在 startWorker(fork) 之前，子进程才会继承
   const isDev = process.env["NODE_ENV"] === "development";
   process.env.LOG_DIR = isDev
     ? join(__dirname, "../../log") // 开发：项目根/log
     : app.getPath("userData"); // 生产：%APPDATA%/electron-pure-admin
-  startWorker(
-    (channel, data) => win?.webContents.send(channel, data),
-    __dirname
-  );
 });
 
 app.on("window-all-closed", () => {

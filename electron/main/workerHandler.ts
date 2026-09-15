@@ -30,5 +30,6 @@ function startWorker(sendToRenderer: SendToRenderer, dirname: any) {
   });
   // 告诉 Worker 开始工作
   worker.send("start");
+  return worker;
 }
-export { startWorker };
+export { startWorker, worker };

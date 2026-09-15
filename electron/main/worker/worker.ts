@@ -1,21 +1,47 @@
 ﻿import { readData } from "./read/read";
 import { ModbusTCPClient } from "./client/clientClass";
 import { assertColumnLength } from "./dataPoint/tableGenerate";
-let modbusTCPClient: ModbusTCPClient;
-async function initTCPClient(tcpOption: any) {
-  const { IP, PORT, TIMEOUT } = tcpOption;
-  modbusTCPClient = new ModbusTCPClient(IP, PORT, TIMEOUT);
-  await modbusTCPClient.repeatConnect();
+interface ClientOptions {
+  id: number;
+  ip: string;
+  port: number;
+  connectTimeout: number;
+  responseTimeout: number;
+  maxRetry: number;
+  heartBeatInterval: number;
 }
-const TCP_PARAMS = {
-  IP: "127.0.0.1",
-  PORT: 502,
-  TIMEOUT: 10000
-};
-async function start() {
-  // 点表完整性校验：列错位/寄存器数不符时直接终止，避免产出错位数据
-  assertColumnLength();
-  await initTCPClient(TCP_PARAMS);
+let newClients: ClientOptions[] = [];
+const clients: Map<string, ModbusTCPClient> = new Map();
+async function initTCPClients(newClients: ClientOptions[]) {
+  //console.log(clients.size);
+  if (clients.size > 0) {
+    await Promise.all([...clients.values()].map(c => c.disConnect()));
+    clients.clear();
+  }
+  for (const item of newClients) {
+    const key = `${item.ip}:${item.port}`;
+    clients.set(
+      key,
+      new ModbusTCPClient(
+        item.ip,
+        item.port,
+        item.connectTimeout,
+        item.responseTimeout,
+        item.maxRetry,
+        item.heartBeatInterval
+      )
+    );
+  }
+  const res = await Promise.allSettled(
+    [...clients.values()].map(async item => {
+      await item.repeatConnect();
+      await start(item);
+      return item.clientProps;
+    })
+  );
+  return res;
+}
+async function start(modbusTCPClient: ModbusTCPClient) {
   if (modbusTCPClient.clientProps.connectStatus !== "connected") {
     return;
   }
@@ -45,4 +71,38 @@ async function start() {
   };
   readTask();
 }
-start();
+async function messageHandler(message: any) {
+  switch (message?.api) {
+    case "set-ips": {
+      const {
+        ipStart,
+        ipNums,
+        port,
+        connectTimeout,
+        responseTimeout,
+        maxRetry,
+        heartBeatInterval
+      } = message?.args.payload;
+      const parts = ipStart.split(".");
+      const prefix = parts.slice(0, 3).join("."); // "192.168.1"
+      const last = Number(parts[3]); // 10
+      const ips = Array.from({ length: ipNums }, (_, index) => {
+        return {
+          id: index + 1,
+          ip: `${prefix}.${last + index}`,
+          port,
+          connectTimeout,
+          responseTimeout,
+          maxRetry,
+          heartBeatInterval
+        };
+      });
+      newClients = ips;
+      const res = await initTCPClients(newClients);
+      console.log("最终结果:", res);
+    }
+  }
+}
+// 点表完整性校验：列错位/寄存器数不符时直接终止，避免产出错位数据
+assertColumnLength();
+process.on("message", messageHandler);

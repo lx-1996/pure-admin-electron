@@ -8,7 +8,7 @@
 } from "vue";
 export function usePackData(dataClass: MaybeRefOrGetter<string>) {
   const dataAllIps = ref<Map<string, Array<any>>>(new Map());
-  const selectedIp = ref<string>("127.0.0.1");
+  const selectedIp = ref<string>("192.168.10.208");
   const dataSelectedIp = computed<Array<any>>(() => {
     const cls = toValue(dataClass); // 关键：在 computed 内部取值，保证响应式
     const list = dataAllIps.value.get(selectedIp.value);
@@ -19,6 +19,7 @@ export function usePackData(dataClass: MaybeRefOrGetter<string>) {
   function onData(_event: any, dataFromMain: any) {
     const { ip, data } = dataFromMain;
     dataAllIps.value.set(ip, data);
+    console.log(dataAllIps.value);
   }
   onMounted(() => {
     listenerId = window.ipcRenderer.on("pack_summary", onData);

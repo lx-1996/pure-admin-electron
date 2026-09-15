@@ -16,9 +16,7 @@ const props = defineProps({
   }
 });
 const tableRef = ref();
-const { loading, columns, dataSelectedIp, loadingConfig } = useColumns(
-  props.cellDataClass
-);
+const { columns, dataSelectedIp } = useColumns(props.cellDataClass);
 </script>
 
 <template>
@@ -30,8 +28,6 @@ const { loading, columns, dataSelectedIp, loadingConfig } = useColumns(
       row-key="id"
       alignWhole="center"
       showOverflowTooltip
-      :loading="loading"
-      :loading-config="loadingConfig"
       :data="dataSelectedIp.data"
       :columns="columns"
       height="100%"

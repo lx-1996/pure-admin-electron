@@ -95,5 +95,6 @@ export async function readData(
     const err = e instanceof Error ? { message: e.message, stack: e.stack } : e;
     writeLog(`${data_class}-error`, err);
     console.error(e);
+    client.clientProps.connectStatus = "failRead";
   }
 }
