@@ -2,32 +2,37 @@
 import { store } from "../utils";
 interface Server {
   serverHost: string;
-  serverPort: number;
   serverConnStatus: ServerStatus;
 }
 type ServerStatus =
-  | "disconnected"
-  | "connected"
-  | "connecting"
-  | "failRead"
   | "notConnected"
-  | "cannotConnect";
+  | "connecting"
+  | "connected"
+  | "cannotConnect"
+  | "disconnected"
+  | "goodRead"
+  | "failRead";
 export const useBcuConnectStore = defineStore("bcuConnect", {
   state: () => ({
-    servers: [] as Server[]
+    servers: new Map() as Map<string, Server>
   }),
   getters: {
-    getServers: state => state.servers,
-    getServerStatus: state => {
-      return state.servers.map(server => server.serverConnStatus);
-    }
+    getServers: state => state.servers
   },
   actions: {
-    addServer(server: Server) {
-      this.servers.push(server);
+    addServer(ip: string, status: ServerStatus) {
+      this.servers.set(ip, {
+        serverHost: ip,
+        serverConnStatus: status
+      });
     },
-    removeAllServers() {
-      this.servers = [];
+    updateStatus(ip: string, status: ServerStatus) {
+      if (this.servers.has(ip)) {
+        const server = this.servers.get(ip);
+        server.serverConnStatus = status;
+      } else {
+        this.addServer(ip, status);
+      }
     }
   }
 });

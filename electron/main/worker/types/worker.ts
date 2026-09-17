@@ -1,5 +1,5 @@
 ﻿import type { ClassType } from "./dataPoint";
-type Event = "set-ips";
+type Event = "bcuConnStatus";
 export interface WorkerDataMessage {
   type: "data";
   class: ClassType;

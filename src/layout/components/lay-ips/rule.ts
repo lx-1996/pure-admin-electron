@@ -39,6 +39,15 @@ const ipRules = reactive<FormRules>({
     },
     { required: true, message: "port is required" }
   ],
+  deviceId: [
+    {
+      type: "number",
+      min: 0,
+      max: 255,
+      message: "deviceId must be a number [0,255]"
+    },
+    { required: true, message: "deviceId is required" }
+  ],
   connectTimeout: [
     {
       type: "number",

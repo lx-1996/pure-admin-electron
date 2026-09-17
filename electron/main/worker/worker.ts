@@ -5,6 +5,7 @@ interface ClientOptions {
   id: number;
   ip: string;
   port: number;
+  deviceId: number;
   connectTimeout: number;
   responseTimeout: number;
   maxRetry: number;
@@ -19,12 +20,13 @@ async function initTCPClients(newClients: ClientOptions[]) {
     clients.clear();
   }
   for (const item of newClients) {
-    const key = `${item.ip}:${item.port}`;
+    const key = `${item.id}:${item.ip}`;
     clients.set(
       key,
       new ModbusTCPClient(
         item.ip,
         item.port,
+        item.deviceId,
         item.connectTimeout,
         item.responseTimeout,
         item.maxRetry,
@@ -37,9 +39,8 @@ async function initTCPClients(newClients: ClientOptions[]) {
       await item.repeatConnect();
       await start(item);
       // client 为 ModbusRTU 实例，内部含 socket/Timeout 等循环引用，
-      // 不可经 process.send 序列化，仅回传纯数据属性
-      const { client: _client, ...clientProps } = item.clientProps;
-      return clientProps;
+      // 不可经 process.send 序列化，仅回传纯数据属性item.clientProps;
+      return item.clientProps;
     })
   );
   return res;
@@ -48,9 +49,20 @@ async function start(modbusTCPClient: ModbusTCPClient) {
   if (modbusTCPClient.clientProps.connectStatus !== "connected") {
     return;
   }
+  // 连接已建立，标记为「正在正常读取服务端」
+  modbusTCPClient.clientProps.connectStatus = "goodRead";
+  process.send?.({
+    type: "event",
+    api: "bcuConnStatus",
+    args: modbusTCPClient.clientProps
+  });
   let readTimer: any = null;
   const readTask = async () => {
-    if (modbusTCPClient.clientProps.connectStatus !== "connected") {
+    // 允许 connected / goodRead 两种状态继续读取；failRead/disconnected 等则停止
+    if (
+      modbusTCPClient.clientProps.connectStatus !== "connected" &&
+      modbusTCPClient.clientProps.connectStatus !== "goodRead"
+    ) {
       if (readTimer) clearTimeout(readTimer);
       return;
     }
@@ -81,6 +93,7 @@ async function messageHandler(message: any) {
         ipStart,
         ipNums,
         port,
+        deviceId,
         connectTimeout,
         responseTimeout,
         maxRetry,
@@ -94,6 +107,7 @@ async function messageHandler(message: any) {
           id: index + 1,
           ip: `${prefix}.${last + index}`,
           port,
+          deviceId,
           connectTimeout,
           responseTimeout,
           maxRetry,
@@ -101,15 +115,7 @@ async function messageHandler(message: any) {
         };
       });
       newClients = ips;
-      const res = await initTCPClients(newClients);
-      process.send?.({
-        type: "event",
-        api: "set-ips",
-        args: {
-          payload: res
-        }
-      });
-      console.log("最终结果:", res);
+      await initTCPClients(newClients);
     }
   }
 }

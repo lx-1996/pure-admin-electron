@@ -1,10 +1,9 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref } from "vue";
 import { ipRules } from "./rule";
 import type { FormInstance } from "element-plus";
 import { message } from "@/utils/message";
 import type { SetIpsRequest } from "../../../../electron/shared/ipc"; // 或相对路径
-//import { useBcuConnectStore } from "@/store/modules/bcuConnect";
 defineOptions({
   name: "setIPSForm"
 });
@@ -13,10 +12,15 @@ export interface FormProps {
     ipStart: string;
     ipNums: number;
     port: number;
+    deviceId: number;
     connectTimeout: number;
     responseTimeout: number;
     maxRetry: number;
     heartBeatInterval: number;
+  };
+  connectionStatus: {
+    ip: string;
+    status: string;
   };
 }
 const props = defineProps<FormProps>();
@@ -36,25 +40,12 @@ async function sendIps(formEl: FormInstance | undefined) {
       requestId: Math.random().toString(36).slice(2) + Date.now()
     };
     const res = await window.ipcRenderer.invoke("set-ips", req);
-    if (res.success) message("成功");
+    if (res.success) message("正在连接...");
     else message(`失败：${res.error}`);
   } catch (e) {
     message("通信异常");
   }
 }
-let listenerId: number | null = null;
-function onIps(_event: any, message: any) {
-  console.log(message);
-  const { payload } = message;
-  console.log(payload);
-}
-onMounted(() => {
-  listenerId = window.ipcRenderer.on("set-ips", onIps);
-});
-onUnmounted(() => {
-  if (listenerId) window.ipcRenderer.off(listenerId);
-  listenerId = null;
-});
 </script>
 
 <template>
@@ -81,6 +72,13 @@ onUnmounted(() => {
           v-model.number="newFormIp.port"
           clearable
           placeholder="server端口"
+        />
+      </el-form-item>
+      <el-form-item prop="deviceId" label="设备ID">
+        <el-input
+          v-model.number="newFormIp.deviceId"
+          clearable
+          placeholder="设备ID"
         />
       </el-form-item>
       <el-form-item prop="connectTimeout" label="连接超时时间">

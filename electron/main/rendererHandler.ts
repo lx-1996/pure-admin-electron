@@ -34,7 +34,6 @@ function initRendererHandler(
     }
   });
   handleIpc("set-ips", args => {
-    // return { success: true };
     worker.send({ api: "set-ips", args });
     return { success: true };
   });
