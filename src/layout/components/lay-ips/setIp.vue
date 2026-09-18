@@ -29,9 +29,8 @@ function onFormClick() {
 let listenerId: number | null = null;
 const bcuConnectStore = useBcuConnectStoreHook();
 function onIps(_event: any, message: any) {
-  console.log(message);
-  const { host, connectStatus } = message;
-  bcuConnectStore.addServer(host, connectStatus);
+  //console.log(message);
+  bcuConnectStore.updateStatus(message);
 }
 onMounted(() => {
   listenerId = window.ipcRenderer.on("bcuConnStatus", onIps);

@@ -1,0 +1,7 @@
+2026-09-18 16:49:20.757 [cell_vltg-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.805 [cell_temp-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.829 [cell_soc-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.860 [cell_soh-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.895 [system_summary-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.905 [pack_summary-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}
+2026-09-18 16:49:20.903 [cluster_summary-error] {"name":"PortNotOpenError","message":"Port Not Open","errno":"ECONNREFUSED"}

@@ -1,23 +1,5 @@
 ﻿import ModbusRTU from "modbus-serial";
-interface ModbusTCPClientProps {
-  connectStatus:
-    | "notConnected"
-    | "connecting"
-    | "connected"
-    | "cannotConnect"
-    | "disconnected"
-    | "goodRead"
-    | "failRead";
-  host: string;
-  port: number;
-  deviceId: number;
-  connectTimeout: number;
-  responseTimeout: number;
-  reconnectTimes: number;
-  maxRetry: number;
-  heartBeatInterval: number;
-  heartBeat: number;
-}
+import type { ModbusTCPClientProps } from "../../../shared/ipc";
 export interface ThisClientBMUConfigData {
   bmu_total: number;
   afe_perBMU: number;
@@ -48,7 +30,7 @@ export class ModbusTCPClient {
   ) {
     this.client = new ModbusRTU();
     this.clientProps = {
-      connectStatus: "notConnected",
+      status: "notConnected",
       host: ip || "127.0.0.1",
       port: port || 502,
       deviceId: deviceId || 1,
@@ -78,13 +60,20 @@ export class ModbusTCPClient {
       this.client.close();
     }
     if (
-      this.clientProps.connectStatus === "connected" ||
-      this.clientProps.connectStatus === "goodRead"
+      this.clientProps.status === "connected" ||
+      this.clientProps.status === "goodRead"
     ) {
       console.log(`${this.clientProps.host}已连接，不再连接`);
       return;
     }
-    this.clientProps.connectStatus = "connecting";
+    // status 可能在 await 期间被 disConnect() 改写，用函数读取避免被类型收窄影响
+    const isDisconnected = () => this.clientProps.status === "disconnected";
+    // 已被手动断开：不要再建连接（重连/心跳重试期间可能刚好被断开）
+    if (isDisconnected()) {
+      console.log(`${this.clientProps.host}已断开，取消本次连接`);
+      return;
+    }
+    this.clientProps.status = "connecting";
     this.notifyConnStatus();
     console.log(this.clientProps.host, "正在连接");
     try {
@@ -92,6 +81,15 @@ export class ModbusTCPClient {
         port: this.clientProps.port,
         timeout: this.clientProps.connectTimeout
       });
+      // 连接建立期间被手动断开（disConnect 此时早已 resolve）：
+      // 必须立刻关闭，否则断开会被这次在途连接"撤销"
+      if (isDisconnected()) {
+        this.client.close();
+        console.log(
+          `${this.clientProps.host} 连接建立过程中已被断开，立即关闭`
+        );
+        return;
+      }
       this.client.setID(this.clientProps.deviceId);
       //设置请求超时时间
       this.client.setTimeout(this.clientProps.responseTimeout);
@@ -102,7 +100,7 @@ export class ModbusTCPClient {
         "连接成功，连接次数:",
         this.clientProps.reconnectTimes
       );
-      this.clientProps.connectStatus = "connected";
+      this.clientProps.status = "connected";
       this.notifyConnStatus();
       this.heartbeat();
     } catch (e) {
@@ -127,7 +125,7 @@ export class ModbusTCPClient {
   /** 断开连接；返回 Promise，在底层 socket 真正关闭后 resolve，调用方据此等待 */
   disConnect(): Promise<void> {
     // 立即标记断开，使仍在跑的旧心跳/read 尽快感知并停止，不再触发重连
-    this.clientProps.connectStatus = "disconnected";
+    this.clientProps.status = "disconnected";
     this.notifyConnStatus();
     // 先停心跳定时器，避免 close 期间仍有周期/在途心跳读产生延迟报错与重复打印
     if (this.heartBeatTimer) clearInterval(this.heartBeatTimer);
@@ -148,11 +146,11 @@ export class ModbusTCPClient {
   async repeatConnect() {
     if (this.clientProps.reconnectTimes >= this.clientProps.maxRetry) {
       console.log("连接次数达到最大限制，停止重连");
-      this.clientProps.connectStatus = "cannotConnect";
+      this.clientProps.status = "cannotConnect";
       this.notifyConnStatus();
       return;
     }
-    if (this.clientProps.connectStatus === "disconnected") {
+    if (this.clientProps.status === "disconnected") {
       console.log("重连过程中手动断开，停止重连");
       return;
     }
@@ -160,7 +158,7 @@ export class ModbusTCPClient {
     await this.connect();
   }
   heartbeat() {
-    if (this.clientProps.connectStatus !== "connected") {
+    if (this.clientProps.status !== "connected") {
       console.log("TCP客户端未连接，心跳终止");
       return;
     }
@@ -171,7 +169,7 @@ export class ModbusTCPClient {
         await this.client.readInputRegisters(0, 1);
         this.clientProps.heartBeat++;
       } catch (e) {
-        if (this.clientProps.connectStatus === "disconnected") {
+        if (this.clientProps.status === "disconnected") {
           // 已断开：清理定时器，避免 setInterval 每个周期重复触发延迟心跳读并打印
           if (this.heartBeatTimer) clearInterval(this.heartBeatTimer);
           this.heartBeatTimer = null;
@@ -181,7 +179,7 @@ export class ModbusTCPClient {
         console.error(`${this.clientProps.host}心跳读取失败`, e);
         if (this.heartBeatTimer) clearInterval(this.heartBeatTimer);
         this.heartBeatTimer = null;
-        this.clientProps.connectStatus = "failRead";
+        this.clientProps.status = "failRead";
         this.notifyConnStatus();
         await this.repeatConnect();
       }

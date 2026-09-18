@@ -1,6 +1,6 @@
 ﻿import { ipcMain, BrowserWindow } from "electron";
 import type { IpcChannel, IpcRequest, IpcResponse } from "../shared/ipc";
-import type { ChildProcess } from "node:child_process";
+import { requestWorker } from "./workerHandler";
 interface InitOptions {
   preload: string;
   url: string | undefined;
@@ -13,10 +13,7 @@ function handleIpc<C extends IpcChannel>(
 ) {
   ipcMain.handle(channel, (_, args: any) => handler(args as IpcRequest<C>));
 }
-function initRendererHandler(
-  { preload, url, indexHtml }: InitOptions,
-  worker: ChildProcess
-) {
+function initRendererHandler({ preload, url, indexHtml }: InitOptions) {
   // New window example arg: new windows url
   ipcMain.handle("open-win", (_, arg) => {
     const childWindow = new BrowserWindow({
@@ -33,9 +30,11 @@ function initRendererHandler(
       childWindow.loadFile(indexHtml, { hash: arg });
     }
   });
-  handleIpc("set-ips", args => {
-    worker.send({ api: "set-ips", args });
-    return { success: true };
-  });
+  // 三个通道都是「下发任务 + 等 worker 回传结果」
+  handleIpc("connectAllInputIps", args =>
+    requestWorker("connectAllInputIps", args)
+  );
+  handleIpc("connectAll", args => requestWorker("connectAll", args));
+  handleIpc("disconnectAll", args => requestWorker("disconnectAll", args));
 }
 export { initRendererHandler };

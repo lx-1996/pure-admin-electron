@@ -4,7 +4,7 @@ import { join, dirname } from "node:path";
 import { app, shell, BrowserWindow } from "electron";
 import { createMenu } from "./menu";
 import { initRendererHandler } from "./rendererHandler";
-import { startWorker } from "./workerHandler";
+import { startWorker, stopWorker } from "./workerHandler";
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -98,11 +98,11 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  const worker = startWorker(
+  startWorker(
     (channel, data) => win?.webContents.send(channel, data),
     __dirname
   );
-  initRendererHandler({ preload, url, indexHtml }, worker);
+  initRendererHandler({ preload, url, indexHtml });
   await createWindow();
   // 必须在 startWorker(fork) 之前，子进程才会继承
   const isDev = process.env["NODE_ENV"] === "development";
@@ -115,6 +115,9 @@ app.on("window-all-closed", () => {
   win = null;
   if (process.platform !== "darwin") app.quit();
 });
+
+// 退出前停掉 worker，避免它被 kill 后触发自动重启
+app.on("before-quit", () => stopWorker());
 
 app.on("second-instance", () => {
   if (win) {
