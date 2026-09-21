@@ -194,6 +194,7 @@ const SHARE = {
   unit_kB: (n: number): UNITTYPE[] => column("kB", n),
   reserved: (n: number): string[] => column("预留", n),
   backslash: (n: number): string[] => column("/", n),
+  empty: (n: number): string[] => column("", n),
   max_65535: (n: number): number[] => column(65535, n),
   null: (n: number): null[] => column(null, n)
 };
@@ -405,44 +406,44 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "mV";
         if (index == 12 || index == 13) return "mV";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "℃";
         if (index == 12 || index == 13) return "℃";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "mV";
         if (index == 12 || index == 13) return "mV";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "℃";
         if (index == 12 || index == 13) return "℃";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "%";
         if (index == 12 || index == 13) return "%";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "%";
         if (index == 12 || index == 13) return "%";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "℃";
         if (index == 12 || index == 13) return "℃";
-        else return "/";
+        else return "";
       }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return "℃";
         if (index == 12 || index == 13) return "℃";
-        else return "/";
+        else return "";
       })
-      // ...SHARE.backslash(16)
+      // ...SHARE.empty(16)
     ] as UNITTYPE[]
   },
   cluster_summary: {
@@ -905,28 +906,28 @@ const params_irregular_props: Record<string, Irregular_props> = {
       // ...SHARE.null(147)
     ] as (BitConfig[] | null)[],
     data_unit: [
-      ...SHARE.backslash(5),
+      ...SHARE.empty(5),
       ...SHARE.unit_v(2),
       ...SHARE.unit_a(1),
       ...SHARE.unit_kΩ(2),
       ...SHARE.unit_temp(5),
-      ...SHARE.backslash(3),
+      ...SHARE.empty(3),
       ...SHARE.unit_pct(3),
-      ...SHARE.backslash(1),
+      ...SHARE.empty(1),
       ...SHARE.unit_pct(1),
-      ...SHARE.backslash(3),
+      ...SHARE.empty(3),
       ...SHARE.unit_pct(1),
-      ...SHARE.backslash(2),
+      ...SHARE.empty(2),
       ...SHARE.unit_kW(2),
       ...SHARE.unit_kWh(2),
       ...SHARE.unit_Ah(2),
       ...SHARE.unit_pct(1),
-      ...SHARE.backslash(1),
+      ...SHARE.empty(1),
       ...SHARE.unit_temp(2),
-      ...SHARE.backslash(6),
+      ...SHARE.empty(6),
       ...SHARE.unit_kB(3),
-      //...SHARE.backslash(144)
-      ...SHARE.backslash(13)
+      //...SHARE.empty(144)
+      ...SHARE.empty(13)
     ] as UNITTYPE[]
   },
   pack_summary: {
@@ -1081,15 +1082,15 @@ const params_irregular_props: Record<string, Irregular_props> = {
     ],
     data_offset: /* SHARE.zero(544) */ SHARE.zero(13),
     data_unit: [
-      ...SHARE.backslash(5),
+      ...SHARE.empty(5),
       ...SHARE.unit_v(1),
       ...SHARE.unit_temp(2),
-      ...SHARE.backslash(1),
+      ...SHARE.empty(1),
       ...SHARE.unit_pct(1),
-      ...SHARE.backslash(1),
+      ...SHARE.empty(1),
       ...SHARE.unit_temp(1),
-      ...SHARE.backslash(1)
-      /*    ...SHARE.backslash(155) */
+      ...SHARE.empty(1)
+      /*    ...SHARE.empty(155) */
     ] as UNITTYPE[]
   }
 };

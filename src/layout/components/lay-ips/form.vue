@@ -1,11 +1,13 @@
 ﻿<script setup lang="ts">
-import { ref } from "vue";
+import { ref, toRaw } from "vue";
 import { ipRules } from "./rule";
 import type { FormInstance } from "element-plus";
 import { message } from "@/utils/message";
+import { cloneDeep } from "@pureadmin/utils";
 import type {
   ConnectAllReq,
-  ConnectResultItem
+  ConnectResultItem,
+  ModbusTCPClientProps
 } from "../../../../electron/shared/ipc"; // 或相对路径
 import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
 defineOptions({
@@ -27,10 +29,13 @@ const bcuConnectStore = useBcuConnectStoreHook();
 const props = defineProps<FormProps>();
 const newFormIp = ref({ ...props.formIps });
 const ruleFormRef = ref<FormInstance>();
-const connecting = ref(false);
 /** 与 store 的判据保持一致：connected / goodRead 视为连接成功 */
 function isConnected(item: ConnectResultItem) {
   return item.status === "connected" || item.status === "goodRead";
+}
+/** 回包时还是 connecting：说明该 ip 首轮没连上、正在后台重连，需要继续等 */
+function isConnecting(item: ConnectResultItem) {
+  return item.status === "connecting";
 }
 /** Electron invoke 的报错带 "Error invoking remote method 'xxx': " 前缀，提示前去掉 */
 function errorText(e: unknown) {
@@ -39,24 +44,32 @@ function errorText(e: unknown) {
     ""
   );
 }
-/** 提示本次建连结果：成功的 ip 与失败的 ip 分开提示 */
+/**
+ * 提示本次建连结果：成功 / 仍在重连中 / 失败，三类分别计数。
+ * worker 的 connectAll 只等每个 ip 的"第一轮尝试"：一直重连中的 ip 不会再拖住回包，
+ * 所以这里拿到的是即时快照，connecting 的要明确告诉用户"请等待"
+ */
 function notifyConnectResult(data?: ConnectResultItem[]) {
   if (!data || data.length === 0) {
     message("没有可连接的目标", { type: "warning" });
     return;
   }
-  const connected = data.filter(isConnected).map(item => item.host);
-  const failed = data.filter(item => !isConnected(item)).map(item => item.host);
-  if (connected.length > 0) {
-    message(`已连接：${connected.join("、")}`, { type: "success" });
-  }
-  if (failed.length > 0) {
-    message(`未连接：${failed.join("、")}`, { type: "warning" });
-  }
+  const connected = data.filter(isConnected).length;
+  const connecting = data.filter(isConnecting).length;
+  const failed = data.length - connected - connecting;
+  const tips: string[] = [];
+  if (connected > 0) tips.push(`已连接成功 ${connected} 个`);
+  if (connecting > 0) tips.push(`${connecting} 个正在连接中，请等待`);
+  if (failed > 0) tips.push(`未连接 ${failed} 个`);
+  if (tips.length === 0) return;
+  message(tips.join("，"), {
+    type: connecting > 0 || failed > 0 ? "warning" : "success",
+    // 有还在重连的 ip 时多停留一会儿，避免没看清就消失
+    duration: connecting > 0 ? 4000 : 3000
+  });
 }
 async function connectAllInputIps(formEl: FormInstance | undefined) {
   if (!formEl) return;
-  connecting.value = true;
   try {
     const valid = await formEl.validate().catch(() => false);
     if (!valid) {
@@ -92,6 +105,12 @@ async function connectAllInputIps(formEl: FormInstance | undefined) {
       maxRetry,
       heartBeatInterval
     }));
+    for (const item of payload) {
+      if (bcuConnectStore.serversHostArray.includes(item.host)) {
+        message(`已存在${item.host},请重新添加`);
+        return;
+      }
+    }
     const req: ConnectAllReq = {
       payload,
       requestId: Math.random().toString(36).slice(2) + Date.now()
@@ -101,16 +120,13 @@ async function connectAllInputIps(formEl: FormInstance | undefined) {
       message(`失败：${res.error}`, { type: "error" });
       return;
     }
-    // worker 回传每个服务器的最终状态，据此提示成功/失败的 ip
+    // worker 回传每个服务器的即时状态，据此提示成功/连接中/失败的 ip
     notifyConnectResult(res.data);
   } catch (e) {
     message(`操作失败：${errorText(e)}`, { type: "error" });
-  } finally {
-    connecting.value = false;
   }
 }
 async function connectAllIps() {
-  connecting.value = true;
   try {
     if (bcuConnectStore.serversArr.length === 0) {
       message("请先添加BCU", { type: "warning" });
@@ -155,8 +171,38 @@ async function connectAllIps() {
   } catch (e) {
     // 以前这里只 console.log，worker 未启动/已退出等失败在界面上完全看不到
     message(`操作失败：${errorText(e)}`, { type: "error" });
-  } finally {
-    connecting.value = false;
+  }
+}
+async function operationForIp(row: ModbusTCPClientProps) {
+  const payload = [toRaw(row)];
+  const req: ConnectAllReq = {
+    payload,
+    requestId: Math.random().toString(36).slice(2) + Date.now()
+  };
+  if (bcuConnectStore.canDisconnect(row.host)) {
+    const res = await window.ipcRenderer.invoke("disconnectAll", req);
+    if (!res.success) {
+      message(`失败：${res.error}`, { type: "error" });
+      return;
+    }
+    const count = res.data?.disconnected;
+    message(count === undefined ? "断开指令已下发" : `已断开 ${count} 个连接`, {
+      type: "success"
+    });
+  } else {
+    const res = await window.ipcRenderer.invoke("connectAll", req);
+    if (!res.success) {
+      message(`失败：${res.error}`, { type: "error" });
+      return;
+    }
+    notifyConnectResult(res.data);
+  }
+}
+function operationText(row: ModbusTCPClientProps) {
+  if (bcuConnectStore.canDisconnect(row.host)) {
+    return "断开";
+  } else {
+    return "连接";
   }
 }
 /**
@@ -167,6 +213,12 @@ const columns = [
   {
     label: "IP",
     prop: "host"
+  },
+  {
+    label: "操作",
+    fixed: "right",
+    width: 90,
+    slot: "operation"
   },
   {
     label: "状态",
@@ -239,24 +291,26 @@ const columns = [
       <!-- 该行没有 label，label-width 置 0 让按钮占满抽屉宽度 -->
       <el-form-item label-width="0px" class="ips-actions">
         <div class="ips-actions__inner">
-          <el-button
-            type="primary"
-            :loading="connecting"
-            @click="connectAllInputIps(ruleFormRef)"
-          >
+          <el-button type="primary" @click="connectAllInputIps(ruleFormRef)">
             添加BCU
           </el-button>
-          <el-button
-            type="primary"
-            :loading="connecting"
-            @click="connectAllIps()"
-          >
+          <el-button type="primary" @click="connectAllIps()">
             {{ bcuConnectStore.canDisconnectAll() ? "断开所有" : "连接所有" }}
           </el-button>
         </div>
       </el-form-item>
     </el-form>
-    <pure-table :data="bcuConnectStore.serversArrMaped" :columns="columns" />
+    <pure-table
+      :data="bcuConnectStore.serversArrMaped"
+      :columns="columns"
+      row-key="host"
+    >
+      <template #operation="{ row }">
+        <el-button @click="operationForIp(row)">{{
+          operationText(row)
+        }}</el-button>
+      </template>
+    </pure-table>
   </div>
 </template>
 

@@ -77,9 +77,6 @@ export function useCol() {
     }
   };
 
-  /** 单位："/" 代表无单位 */
-  const fmtUnit = (unit?: string) => (unit && unit !== "/" ? unit : "");
-
   return {
     dataWithFilter,
     sysStatusData,
@@ -88,7 +85,6 @@ export function useCol() {
     updatedAt,
     isBits,
     getDisplayMode,
-    isBitActive,
-    fmtUnit
+    isBitActive
   };
 }

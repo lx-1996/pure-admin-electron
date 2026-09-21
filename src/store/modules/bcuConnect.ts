@@ -24,7 +24,8 @@ export const useBcuConnectStore = defineStore("bcuConnect", {
         ...server,
         status: statusMap[server.status]
       }));
-    }
+    },
+    serversHostArray: (state): string[] => Array.from(state.servers.keys())
   },
   actions: {
     addServer(connOption: ModbusTCPClientProps) {
@@ -68,6 +69,16 @@ export const useBcuConnectStore = defineStore("bcuConnect", {
       return (
         this.hasAnyServerInStatus("connecting") || this.anyServerConnected()
       );
+    },
+    canDisconnect(host: string) {
+      if (this.servers.has(host)) {
+        const server = this.servers.get(host);
+        return (
+          server.status === "connected" ||
+          server.status === "goodRead" ||
+          server.status === "connecting"
+        );
+      }
     }
   }
 });

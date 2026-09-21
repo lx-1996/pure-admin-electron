@@ -19,6 +19,19 @@ export class ModbusTCPClient {
   public clientProps: ModbusTCPClientProps;
   public client_data: ThisClientData;
   public heartBeatTimer: ReturnType<typeof setInterval> | null = null;
+  /**
+   * 数据读取循环的定时器句柄，由 worker 的读取循环独占读写：
+   * 1. 心跳失败重连成功会再次触发 onConnected，靠它判断"已有一个循环在跑"，避免跑出两个循环；
+   * 2. 循环退出时置空，便于下次连接重新启动。
+   * 注意不要在循环之外 clear/置空，否则会失去对在途循环的引用
+   */
+  public readTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * 连接成功回调（首轮直连成功、或后台重连后成功都会触发）。
+   * worker 用它来启动数据读取：connect() 只等"第一轮尝试"，重连在后台继续，
+   * 成功时机晚于 connect() 返回，所以不能再用 `await connect(); start()` 的写法
+   */
+  public onConnected: ((client: ModbusTCPClient) => void) | null = null;
   constructor(
     ip: string,
     port: number,
@@ -55,16 +68,24 @@ export class ModbusTCPClient {
       other_config: {}
     };
   }
+  /**
+   * 发起一次连接（一次尝试）。
+   * 注意：失败后的重连链条**不会**在这里被 await，本方法在第一轮尝试结束后就返回，
+   * 状态停留在 "connecting"；多个 ip 同时连接时，先连上的 ip 才不会被一直重连的 ip
+   * 拖住（表现为界面迟迟没有任何结果提示）
+   */
   async connect() {
-    if (this.client.isOpen) {
-      this.client.close();
-    }
+    // 先判断再关闭：已连接状态下如果先 close() 再 return，会出现
+    // "状态显示已连接、socket 却被关掉" 的假连接，随后心跳必然失败
     if (
       this.clientProps.status === "connected" ||
       this.clientProps.status === "goodRead"
     ) {
       console.log(`${this.clientProps.host}已连接，不再连接`);
       return;
+    }
+    if (this.client.isOpen) {
+      this.client.close();
     }
     // status 可能在 await 期间被 disConnect() 改写，用函数读取避免被类型收窄影响
     const isDisconnected = () => this.clientProps.status === "disconnected";
@@ -103,6 +124,9 @@ export class ModbusTCPClient {
       this.clientProps.status = "connected";
       this.notifyConnStatus();
       this.heartbeat();
+      // 必须放在 heartbeat() 之后：start() 会把状态改成 goodRead，
+      // 而 heartbeat() 的入口只接受 connected
+      this.onConnected?.(this);
     } catch (e) {
       console.log(
         this.clientProps.host,
@@ -110,7 +134,12 @@ export class ModbusTCPClient {
         this.clientProps.reconnectTimes,
         e
       );
-      await this.repeatConnect();
+      // 不 await：重连链在后台继续跑，本次 connect() 到这里就结束，
+      // 调用方（worker）可以立刻回包，让界面先提示"已连接 N 个 / M 个连接中请等待"。
+      // 后续重连成功时由 onConnected 触发数据读取
+      this.repeatConnect().catch(err =>
+        console.error(`${this.clientProps.host}重连链路异常`, err)
+      );
     }
   }
   /** 向渲染进程推送当前连接状态事件；非 fork 子进程（process.send 不存在）时静默跳过 */

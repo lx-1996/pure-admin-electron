@@ -47,8 +47,7 @@
                 <span
                   v-for="(value, i) in item.data_parsed"
                   :key="i"
-                  class="chip"
-                  :class="{ 'chip--on': isBitActive(value) }"
+                  class="chip chip--on"
                   :title="value?.bit_name"
                 >
                   {{ getDisplayMode(value) }}
@@ -72,8 +71,8 @@
               </div>
               <div class="metric__value">
                 <span class="metric__num">{{ item.data_parsed }}</span>
-                <span v-if="fmtUnit(item.data_unit)" class="metric__unit">
-                  {{ fmtUnit(item.data_unit) }}
+                <span v-if="item.data_unit" class="metric__unit">
+                  {{ item.data_unit }}
                 </span>
               </div>
             </div>
@@ -99,8 +98,7 @@ const {
   sysStatusData,
   updatedAt,
   getDisplayMode,
-  isBitActive,
-  fmtUnit
+  isBitActive
 } = useCol();
 </script>
 
