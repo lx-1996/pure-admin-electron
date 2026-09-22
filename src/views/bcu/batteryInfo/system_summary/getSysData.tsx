@@ -1,11 +1,6 @@
-﻿import {
-  onMounted,
-  onUnmounted,
-  ref,
-  computed,
-  toValue,
-  type MaybeRefOrGetter
-} from "vue";
+﻿import { ref, computed, toValue, type MaybeRefOrGetter } from "vue";
+import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
+import { useIpcListener } from "@/utils/useIpcListener";
 interface Item {
   id: number;
   data_name: string;
@@ -70,10 +65,10 @@ function transformData(arr: Item[], dataClass: string): Item[] {
 }
 export function useSysData(dataClass: MaybeRefOrGetter<string>) {
   const dataAllIps = ref<Map<string, Array<any>>>(new Map());
-  const selectedIp = ref<string>("192.168.10.208");
+  const bcuConnectStore = useBcuConnectStoreHook();
   const dataSelectedIp = computed<Array<any>>(() => {
     const cls = toValue(dataClass); // 关键：在 computed 内部取值，保证响应式
-    const list = dataAllIps.value.get(selectedIp.value);
+    const list = dataAllIps.value.get(bcuConnectStore.selectIp);
     if (!list) return [];
     const arr = list.filter(item => item.data_class == cls);
     const arr1 = transformData(arr, cls).filter(
@@ -81,20 +76,11 @@ export function useSysData(dataClass: MaybeRefOrGetter<string>) {
     );
     return arr1;
   });
-  let listenerId = null;
   function onData(_event: any, dataFromMain: any) {
     // console.log(dataFromMain);
     const { ip, data } = dataFromMain;
     dataAllIps.value.set(ip, data);
   }
-  onMounted(() => {
-    listenerId = window.ipcRenderer.on("system_summary", onData);
-  });
-  onUnmounted(() => {
-    if (listenerId !== null) {
-      window.ipcRenderer.off(listenerId);
-      listenerId = null;
-    }
-  });
+  useIpcListener("system_summary", onData);
   return { dataAllIps, dataSelectedIp };
 }

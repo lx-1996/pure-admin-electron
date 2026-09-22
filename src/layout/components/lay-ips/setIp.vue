@@ -1,6 +1,6 @@
 ﻿<script setup lang="tsx">
-import { ref, onMounted, onUnmounted } from "vue";
 import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
+import { useIpcListener } from "@/utils/useIpcListener";
 import { addDrawer } from "@/components/ReDrawer/index";
 import form from "./form.vue";
 defineOptions({
@@ -9,7 +9,7 @@ defineOptions({
 function onFormClick() {
   addDrawer({
     size: "30%",
-    //title: "连接设备",
+    title: "连接管理",
     hideFooter: true,
     contentRenderer: () => form,
     props: {
@@ -26,23 +26,14 @@ function onFormClick() {
     }
   });
 }
-let listenerId: number | null = null;
 const bcuConnectStore = useBcuConnectStoreHook();
 function onIps(_event: any, message: any) {
   //console.log(message);
   bcuConnectStore.updateStatus(message);
 }
-onMounted(() => {
-  listenerId = window.ipcRenderer.on("bcuConnStatus", onIps);
-});
-onUnmounted(() => {
-  if (listenerId) window.ipcRenderer.off(listenerId);
-  listenerId = null;
-});
+useIpcListener("bcuConnStatus", onIps);
 </script>
 
 <template>
-  <div>
-    <el-button @click="onFormClick">连接</el-button>
-  </div>
+  <el-button @click="onFormClick">连接</el-button>
 </template>

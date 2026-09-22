@@ -3,13 +3,13 @@ import { ref, toRaw } from "vue";
 import { ipRules } from "./rule";
 import type { FormInstance } from "element-plus";
 import { message } from "@/utils/message";
-import { cloneDeep } from "@pureadmin/utils";
 import type {
   ConnectAllReq,
   ConnectResultItem,
   ModbusTCPClientProps
 } from "../../../../electron/shared/ipc"; // 或相对路径
 import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
+import type { AdaptiveConfig } from "@pureadmin/table";
 defineOptions({
   name: "setIPsForm"
 });
@@ -225,6 +225,17 @@ const columns = [
     prop: "status"
   }
 ];
+/** 撑满内容区自适应高度相关配置 */
+const adaptiveConfig: AdaptiveConfig = {
+  /** 表格距离页面底部的偏移量，默认值为 `96` */
+  offsetBottom: 30
+  /** 是否固定表头，默认值为 `true`（如果不想固定表头，fixHeader设置为false并且表格要设置table-layout="auto"） */
+  // fixHeader: true
+  /** 页面 `resize` 时的防抖时间，默认值为 `60` ms */
+  // timeout: 60
+  /** 表头的 `z-index`，默认值为 `100` */
+  // zIndex: 100
+};
 </script>
 
 <template>
@@ -234,7 +245,7 @@ const columns = [
       :model="newFormIp"
       :rules="ipRules"
       label-position="left"
-      label-width="120px"
+      label-width="140px"
     >
       <el-form-item prop="ipStart" label="起始ip">
         <el-input v-model="newFormIp.ipStart" clearable placeholder="起始ip" />
@@ -260,14 +271,14 @@ const columns = [
           placeholder="设备ID"
         />
       </el-form-item>
-      <el-form-item prop="connectTimeout" label="连接超时时间">
+      <el-form-item prop="connectTimeout" label="连接超时时间 (ms)">
         <el-input
           v-model.number="newFormIp.connectTimeout"
           clearable
           placeholder="连接超时时间"
         />
       </el-form-item>
-      <el-form-item prop="responseTimeout" label="响应超时时间">
+      <el-form-item prop="responseTimeout" label="响应超时时间 (ms)">
         <el-input
           v-model.number="newFormIp.responseTimeout"
           clearable
@@ -281,7 +292,7 @@ const columns = [
           placeholder="最大重连次数"
         />
       </el-form-item>
-      <el-form-item prop="heartBeatInterval" label="心跳间隔">
+      <el-form-item prop="heartBeatInterval" label="心跳间隔 (ms)">
         <el-input
           v-model.number="newFormIp.heartBeatInterval"
           clearable
@@ -304,6 +315,13 @@ const columns = [
       :data="bcuConnectStore.serversArrMaped"
       :columns="columns"
       row-key="host"
+      align-whole="center"
+      :header-cell-style="{
+        background: 'var(--el-fill-color-light)',
+        color: 'var(--el-text-color-primary)'
+      }"
+      adaptive
+      :adaptive-config="adaptiveConfig"
     >
       <template #operation="{ row }">
         <el-button @click="operationForIp(row)">{{

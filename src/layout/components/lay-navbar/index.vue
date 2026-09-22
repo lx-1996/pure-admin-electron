@@ -7,6 +7,7 @@ import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vu
 import LaySidebarBreadCrumb from "../lay-sidebar/components/SidebarBreadCrumb.vue";
 import LaySidebarTopCollapse from "../lay-sidebar/components/SidebarTopCollapse.vue";
 import SetIps from "../lay-ips/setIp.vue";
+import SelectIp from "../lay-ips/selectIp.vue";
 
 import LogoutCircleRLine from "~icons/ri/logout-circle-r-line";
 import Setting from "~icons/ri/settings-3-line";
@@ -18,7 +19,8 @@ const {
   onPanel,
   pureApp,
   username,
-  userAvatar,
+  //  userAvatar,
+  userAvatarIcon,
   avatarsStyle,
   toggleSideBar
 } = useNav();
@@ -48,10 +50,18 @@ const {
       <!-- 消息通知 -->
       <!-- <LayNotice id="header-notice" /> -->
       <!-- 退出登录 -->
+      <SelectIp id="header-selectIp" />
       <SetIps id="header-setIps" />
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover select-none">
-          <img :src="userAvatar" :style="avatarsStyle" />
+          <!-- <img :src="userAvatar" :style="avatarsStyle" /> -->
+          <IconifyIconOffline
+            :icon="userAvatarIcon"
+            :style="avatarsStyle"
+            width="22"
+            height="22"
+            class="dark:text-white"
+          />
           <p v-if="username" class="dark:text-white">{{ username }}</p>
         </span>
         <template #dropdown>
@@ -92,6 +102,7 @@ const {
 
   .vertical-header-right {
     display: flex;
+    gap: 5px;
     align-items: center;
     justify-content: flex-end;
     min-width: 280px;

@@ -14,6 +14,7 @@ function get_decimal_places(res: table.RES | undefined): number {
     case 0.01:
       return 2;
     case 0.001:
+    case 0.00098:
       return 3;
     default:
       return 0; // 含 res=1 与 undefined

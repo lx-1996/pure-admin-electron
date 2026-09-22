@@ -96,7 +96,6 @@ const {
   bitData,
   scalarData,
   sysStatusData,
-  updatedAt,
   getDisplayMode,
   isBitActive
 } = useCol();

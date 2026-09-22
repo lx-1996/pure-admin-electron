@@ -3,8 +3,9 @@
   AdaptiveConfig,
   PaginationProps
 } from "@pureadmin/table";
-import { ref, reactive, onBeforeMount, onBeforeUnmount } from "vue";
+import { ref, reactive } from "vue";
 import { delay } from "@pureadmin/utils";
+import { useIpcListener } from "@/utils/useIpcListener";
 export function useColumns() {
   const data = ref<Array<Record<string, any>>>([]);
   const loading = ref(true);
@@ -98,8 +99,6 @@ export function useColumns() {
   function onSizeChange(val) {
     console.log("onSizeChange", val);
   }
-  let listenerId: number | null = null;
-
   function onData(_event: any, value: any) {
     //console.log(value);
     data.value = Array.isArray(value) ? value : [];
@@ -107,16 +106,7 @@ export function useColumns() {
     loadingConfig.text = "加载完成";
     pagination.total = data.value.length;
   }
-  onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("pcs_data", onData);
-  });
-
-  onBeforeUnmount(() => {
-    if (listenerId !== null) {
-      window.ipcRenderer.off(listenerId);
-      listenerId = null;
-    }
-  });
+  useIpcListener("pcs_data", onData);
   return {
     columns,
     data,
@@ -124,8 +114,6 @@ export function useColumns() {
     pagination,
     loadingConfig,
     adaptiveConfig,
-    listenerId,
-    onData,
     onCurrentChange,
     onSizeChange
   };

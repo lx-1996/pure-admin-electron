@@ -1,7 +1,8 @@
 import { storeToRefs } from "pinia";
 import { getConfig } from "@/config";
 import { emitter } from "@/utils/mitt";
-import Avatar from "@/assets/user.jpg";
+// 原头像兜底：本地图片 src/assets/user.jpg（已弃用，改用下方固定 iconify 离线图标）
+// import Avatar from "@/assets/user.jpg";
 import { getTopMenu } from "@/router/utils";
 import { useFullscreen } from "@vueuse/core";
 import type { routeMetaType } from "../types";
@@ -14,6 +15,7 @@ import { useGlobal, isAllEmpty } from "@pureadmin/utils";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import ExitFullscreen from "~icons/ri/fullscreen-exit-fill";
 import Fullscreen from "~icons/ri/fullscreen-fill";
+import UserIcon from "~icons/ri/account-circle-line";
 
 const errorInfo =
   "The current routing configuration is incorrect, please check the configuration";
@@ -37,12 +39,14 @@ export function useNav() {
     };
   });
 
-  /** 头像（如果头像为空则使用 src/assets/user.jpg ） */
-  const userAvatar = computed(() => {
-    return isAllEmpty(useUserStoreHook()?.avatar)
-      ? Avatar
-      : useUserStoreHook()?.avatar;
-  });
+  // 头像：原逻辑读取后端返回的远程头像地址（userAvatar），网络不通时 <img> 仅显示裂图、不抛异常
+  // const userAvatar = computed(() => {
+  //   return isAllEmpty(useUserStoreHook()?.avatar)
+  //     ? Avatar
+  //     : useUserStoreHook()?.avatar;
+  // });
+  /** 固定使用本地 iconify 离线图标作头像，不依赖后端远程地址，内网/断网都正常显示 */
+  const userAvatarIcon = UserIcon;
 
   /** 昵称（如果昵称为空则显示用户名） */
   const username = computed(() => {
@@ -150,7 +154,8 @@ export function useNav() {
     isCollapse,
     pureApp,
     username,
-    userAvatar,
+    // userAvatar,
+    userAvatarIcon,
     avatarsStyle,
     tooltipEffect
   };

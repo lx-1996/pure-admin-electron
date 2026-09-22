@@ -1,4 +1,6 @@
-﻿import { computed, ref, onBeforeMount, onBeforeUnmount } from "vue";
+﻿import { computed, ref } from "vue";
+import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
+import { useIpcListener } from "@/utils/useIpcListener";
 
 /** 需要独占一行的点名 */
 const SYS_STATUS_NAME = "系统总状态位";
@@ -21,29 +23,25 @@ function isBitActive(value: any) {
 }
 
 export function useCol() {
-  const data = ref<Array<Record<string, any>>>([]);
-  const dataWithFilter = ref<Array<Record<string, any>>>([]);
-  const updatedAt = ref("");
-  let listenerId: number | null = null;
-
+  const bcuConnectStore = useBcuConnectStoreHook();
+  /** key 是 ip：所有 ip 的数据都留着，切换所选 ip 时能立刻显示，不必等下一次上报 */
+  const dataAllIps = ref<Map<string, Array<Record<string, any>>>>(new Map());
+  /** 当前所选 ip 的数据：selectIp 必须在 computed 内部读取，否则切换 ip 不会刷新 */
+  const dataSelectedIp = computed<Array<Record<string, any>>>(() => {
+    return dataAllIps.value.get(bcuConnectStore.selectIp) ?? [];
+  });
   function onData(_event: any, dataFromMain: any) {
-    data.value = Array.isArray(dataFromMain.data) ? dataFromMain.data : [];
-    dataWithFilter.value = data.value.filter(item => !item.data_isHiden);
-    updatedAt.value = new Date().toLocaleTimeString("zh-CN", {
-      hour12: false
-    });
+    const { ip, data } = dataFromMain ?? {};
+    if (!ip) return;
+    dataAllIps.value.set(ip, Array.isArray(data) ? data : []);
   }
 
-  onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on("cluster_summary", onData);
-  });
+  useIpcListener("cluster_summary", onData);
 
-  onBeforeUnmount(() => {
-    if (listenerId !== null) {
-      window.ipcRenderer.off(listenerId);
-      listenerId = null;
-    }
-  });
+  /** 过滤隐藏项：基于所选 ip 的数据 */
+  const dataWithFilter = computed(() =>
+    dataSelectedIp.value.filter(item => !item.data_isHiden)
+  );
 
   /** 系统总状态位：独占一行，置于首位 */
   const sysStatusData = computed(() =>
@@ -78,11 +76,12 @@ export function useCol() {
   };
 
   return {
+    dataAllIps,
+    dataSelectedIp,
     dataWithFilter,
     sysStatusData,
     bitData,
     scalarData,
-    updatedAt,
     isBits,
     getDisplayMode,
     isBitActive

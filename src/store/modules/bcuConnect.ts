@@ -13,7 +13,8 @@ const statusMap: Record<ServerStatus, string> = {
 };
 export const useBcuConnectStore = defineStore("bcuConnect", {
   state: () => ({
-    servers: new Map() as Map<string, ModbusTCPClientProps>
+    servers: new Map() as Map<string, ModbusTCPClientProps>,
+    selectIp: ""
   }),
   getters: {
     //用 Array.from() 把迭代器转成数组，既满足表格的 data 类型，也保留了响应式
@@ -25,7 +26,20 @@ export const useBcuConnectStore = defineStore("bcuConnect", {
         status: statusMap[server.status]
       }));
     },
-    serversHostArray: (state): string[] => Array.from(state.servers.keys())
+    serversHostArray: (state): string[] => Array.from(state.servers.keys()),
+    ipsGoodRead: state =>
+      Array.from(state.servers.values())
+        .filter(item => item.status === "goodRead")
+        .map(item => item.host),
+    serverOptions: state =>
+      Array.from(state.servers.values())
+        .filter(item => item.status === "goodRead")
+        .map(item => {
+          return {
+            label: item.host,
+            value: item.host
+          };
+        })
   },
   actions: {
     addServer(connOption: ModbusTCPClientProps) {

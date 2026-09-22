@@ -115,7 +115,7 @@ export class ModbusTCPClient {
       //设置请求超时时间
       this.client.setTimeout(this.clientProps.responseTimeout);
       await this.client.readInputRegisters(0, 1);
-      this.clientProps.reconnectTimes = 0;
+      this.clientProps.reconnectTimes = 1;
       console.log(
         this.clientProps.host,
         "连接成功，连接次数:",

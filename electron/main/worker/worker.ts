@@ -15,10 +15,6 @@ interface ClientOptions {
 }
 const clients: Map<string, ModbusTCPClient> = new Map();
 async function initTCPClients(newClients: ClientOptions[]) {
-  // if (clients.size > 0) {
-  //   await Promise.all([...clients.values()].map(c => c.disConnect()));
-  //   clients.clear();
-  // }
   for (const item of newClients) {
     const client = new ModbusTCPClient(
       item.host,
@@ -47,8 +43,6 @@ async function initTCPClients(newClients: ClientOptions[]) {
       // connect() 在第一轮尝试后即返回：首轮没连上的 ip 状态仍是 connecting（后台重连中），
       // 不会把其它已连上的 ip 的结果一直拖着不回包
       await client.connect();
-      // client 为 ModbusRTU 实例，内部含 socket/Timeout 等循环引用，
-      // 不可经 process.send 序列化，仅回传纯数据属性item.clientProps;
       return client.clientProps;
     })
   );

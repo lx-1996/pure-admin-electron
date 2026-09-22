@@ -47,7 +47,7 @@ export type UNITTYPE =
   | "kWh"
   | "Ah"
   | "kB";
-export type RES = 1 | 0.1 | 0.01 | 0.001;
+export type RES = 1 | 0.1 | 0.01 | 0.001 | 0.00098;
 export type BIT_VALUE_TYPE =
   | "bit_value"
   | "bit_mapping"

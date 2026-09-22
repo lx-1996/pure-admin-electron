@@ -1,14 +1,16 @@
-﻿import { ref, onBeforeMount, onBeforeUnmount, computed } from "vue";
+﻿import { ref, computed } from "vue";
+import { useBcuConnectStoreHook } from "@/store/modules/bcuConnect";
+import { useIpcListener } from "@/utils/useIpcListener";
 interface CellData {
   data: Record<string, any>[];
   maxCellsPerAFE: number;
 }
 export function useColumns(dataType: string) {
   const dataAllIps = ref<Map<string, CellData>>(new Map());
-  const selectedIp = ref<string>("192.168.10.208");
+  const bcuConnectStore = useBcuConnectStoreHook();
   const dataSelectedIp = computed(() => {
     return (
-      dataAllIps.value.get(selectedIp.value) ?? {
+      dataAllIps.value.get(bcuConnectStore.selectIp) ?? {
         data: [],
         maxCellsPerAFE: 0
       }
@@ -31,26 +33,13 @@ export function useColumns(dataType: string) {
       })
     ];
   });
-  let listenerId: number | null = null;
-
   function onData(_event: any, dataFromMain: any) {
     const { ip, data } = dataFromMain;
     dataAllIps.value.set(ip, data);
   }
-  onBeforeMount(() => {
-    listenerId = window.ipcRenderer.on(dataType, onData);
-  });
-
-  onBeforeUnmount(() => {
-    if (listenerId !== null) {
-      window.ipcRenderer.off(listenerId);
-      listenerId = null;
-    }
-  });
+  useIpcListener(dataType, onData);
   return {
     columns,
-    dataSelectedIp,
-    listenerId,
-    onData
+    dataSelectedIp
   };
 }

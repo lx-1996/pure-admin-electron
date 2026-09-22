@@ -17,17 +17,16 @@ export default {
       name: "Page1",
       component: () => import("@/views/bcu/batteryInfo/index.vue"),
       meta: {
-        title: "首页1",
+        title: "电池数据",
         showLink: VITE_HIDE_HOME === "true" ? false : true
       }
     },
     {
       path: "/page2",
       name: "Page2",
-      component: () =>
-        import("@/views/bcu/batteryInfo/cluster_summary/index.vue"),
+      component: () => import("@/views/bcu/version/index.vue"),
       meta: {
-        title: "首页2"
+        title: "版本号"
       }
     }
   ]

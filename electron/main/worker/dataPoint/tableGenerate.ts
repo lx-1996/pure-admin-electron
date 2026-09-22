@@ -180,6 +180,7 @@ const SHARE = {
   /** 0.1 分辨率常量列 */
   res_0_1: (n: number): RES[] => column(0.1, n),
   res_1: (n: number): RES[] => column(1, n),
+  res_1024: (n: number): RES[] => column(0.00098, n),
   /** V 单位常量列 */
   unit_v: (n: number): UNITTYPE[] => column("V", n),
   /** ℃ 单位常量列 */
@@ -532,7 +533,9 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...SHARE.res_0_1(1), //簇真实SOC
       ...SHARE.res_1(1),
       ...SHARE.res_0_1(2), //簇端动力接插件PCS测温差值
-      ...SHARE.res_1(22)
+      ...SHARE.res_1(6),
+      ...SHARE.res_1024(3),
+      ...SHARE.res_1(13)
       //...SHARE.res_1(153)
     ],
     data_offset: /* SHARE.zero(192) */ SHARE.zero(61),
@@ -1149,10 +1152,10 @@ const params_propMap: Record<ClassType, PointTable> = {
         "CAN霍尔传感器名称",
         "CAN霍尔传感器软件版本",
         "预留",
-        "周期任务堆栈大小",
-        "系统堆栈空间",
-        "系统堆栈最小空间",
-        "可配置默认参数剩余次数",
+        // "周期任务堆栈大小",
+        // "系统堆栈空间",
+        // "系统堆栈最小空间",
+        // "可配置默认参数剩余次数",
         "BCU产品编码",
         "BCU硬件版本号",
         "BCU软件版本号",
