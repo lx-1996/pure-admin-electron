@@ -81,6 +81,7 @@ async function start(modbusTCPClient: ModbusTCPClient) {
       await readData(modbusTCPClient, "system_summary");
       await readData(modbusTCPClient, "cluster_summary");
       await readData(modbusTCPClient, "pack_summary", bmuConfig);
+      await readData(modbusTCPClient, "power_off_data");
       // await readData(modbusTCPClient, "pcs_data");
       // await readData(modbusTCPClient, "cooler_data");
       // await readData(modbusTCPClient, "dehumidifier_data");
@@ -151,24 +152,6 @@ async function messageHandler(message: WorkerInMessage) {
       break;
     }
     case "disconnectAll": {
-      // const count = clients.size;
-      // if (count > 0) {
-      //   await Promise.all([...clients.values()].map(c => c.disConnect()));
-      //   clients.clear();
-      //   process.send!({
-      //     type: "task",
-      //     requestId: message.requestId,
-      //     result: { disconnected: count }
-      //   });
-      // } else {
-      //   // 没有可断开的连接时用 error 回包：主进程会走 reject，
-      //   // 渲染进程才能提示真实原因，而不是被包装成一次"成功"
-      //   process.send!({
-      //     type: "task",
-      //     requestId: message.requestId,
-      //     error: "worker 中没有已建立的连接，请先添加BCU"
-      //   });
-      // }
       if (!Array.isArray(message.payload) || message.payload.length === 0) {
         process.send!({
           type: "task",

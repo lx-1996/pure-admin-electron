@@ -30,19 +30,33 @@ export function useCol() {
   const dataSelectedIp = computed<Array<Record<string, any>>>(() => {
     return dataAllIps.value.get(bcuConnectStore.selectIp) ?? [];
   });
+  const dataPowerOffAllIps = ref<Map<string, Array<Record<string, any>>>>(
+    new Map()
+  );
+  /** 当前所选 ip 的数据：selectIp 必须在 computed 内部读取，否则切换 ip 不会刷新 */
+  const dataPowerOffSelectedIp = computed<Array<Record<string, any>>>(() => {
+    return dataPowerOffAllIps.value.get(bcuConnectStore.selectIp) ?? [];
+  });
   function onData(_event: any, dataFromMain: any) {
     const { ip, data } = dataFromMain ?? {};
     if (!ip) return;
     dataAllIps.value.set(ip, Array.isArray(data) ? data : []);
   }
+  function onPowerOffData(_event: any, dataFromMain: any) {
+    const { ip, data } = dataFromMain ?? {};
+    if (!ip) return;
+    dataPowerOffAllIps.value.set(ip, Array.isArray(data) ? data : []);
+  }
 
   useIpcListener("cluster_summary", onData);
-
+  useIpcListener("power_off_data", onPowerOffData);
   /** 过滤隐藏项：基于所选 ip 的数据 */
   const dataWithFilter = computed(() =>
     dataSelectedIp.value.filter(item => !item.data_isHiden)
   );
-
+  const dataPowerOffWithFilter = computed(() =>
+    dataPowerOffSelectedIp.value.filter(item => !item.data_isHiden)
+  );
   /** 系统总状态位：独占一行，置于首位 */
   const sysStatusData = computed(() =>
     dataWithFilter.value.filter(
@@ -63,7 +77,9 @@ export function useCol() {
       item => !isBits(item) && !Array.isArray(item.data_parsed)
     )
   );
-
+  const scalarDataWithpowerOff = computed(() => {
+    return [...scalarData.value, ...dataPowerOffWithFilter.value];
+  });
   const getDisplayMode = (value: any) => {
     switch (value?.display_mode) {
       case "mappingValue":
@@ -82,6 +98,7 @@ export function useCol() {
     sysStatusData,
     bitData,
     scalarData,
+    scalarDataWithpowerOff,
     isBits,
     getDisplayMode,
     isBitActive

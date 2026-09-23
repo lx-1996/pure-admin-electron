@@ -17,6 +17,7 @@ export type ClassType =
   | "system_summary"
   | "cluster_summary"
   | "pack_summary"
+  | "power_off_data"
   | "pcs_data"
   | "cooler_data"
   | "dehumidifier_data"
@@ -46,7 +47,8 @@ export type UNITTYPE =
   | "kW"
   | "kWh"
   | "Ah"
-  | "kB";
+  | "kB"
+  | "";
 export type RES = 1 | 0.1 | 0.01 | 0.001 | 0.00098;
 export type BIT_VALUE_TYPE =
   | "bit_value"

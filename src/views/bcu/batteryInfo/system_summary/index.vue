@@ -1,10 +1,16 @@
 <template>
   <div>
-    <el-row :gutter="2" class="card-row">
+    <el-row :gutter="2" class="gap-y-2.5">
       <re-col v-for="(item, index) in dataSelectedIp" :key="index" :value="3">
-        <div class="metric">
-          <div class="metric__name">{{ item.data_name }}</div>
-          <div class="metric__num">
+        <div
+          class="h-full rounded-md border border-(--el-border-color-lighter) bg-(--el-bg-color) py-2 px-2.5 transition duration-200 hover:border-(--el-color-primary-light-5) hover:shadow-sm"
+        >
+          <div class="mb-1 truncate text-xs text-(--el-text-color-secondary)">
+            {{ item.data_name }}
+          </div>
+          <div
+            class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+          >
             {{ item.data_parsed_withIndex }}
           </div>
         </div>
@@ -28,48 +34,3 @@ const props = defineProps({
 });
 const { dataSelectedIp } = useSysData(() => props.dataClass);
 </script>
-
-<style lang="scss" scoped>
-.card-row {
-  row-gap: 10px;
-}
-
-.metric {
-  height: 100%;
-  padding: 8px 10px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-
-  &:hover {
-    border-color: var(--el-color-primary-light-5);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
-  }
-
-  &__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    white-space: nowrap;
-  }
-
-  &__value {
-    display: flex;
-    gap: 3px;
-    align-items: baseline;
-    margin-top: 2px;
-  }
-
-  &__num {
-    font-size: 14px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.25;
-    color: var(--el-text-color-primary);
-  }
-}
-</style>

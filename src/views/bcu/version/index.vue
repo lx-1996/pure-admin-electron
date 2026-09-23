@@ -1,33 +1,80 @@
-﻿<template>
-  <el-card class="cluster-page">
+<template>
+  <el-card>
     <el-empty
-      v-if="!dataVersion.length"
+      v-if="!dataBCUVersion.length"
       description="等待下位机数据…"
       :image-size="80"
     />
 
     <template v-else>
-      <section v-if="dataVersion.length" class="cluster-page__section">
-        <el-row :gutter="10" class="card-row">
-          <re-col
-            v-for="(item, index) in dataVersion"
-            :key="`s-${item.data_name ?? index}`"
-            :value="3"
+      <div class="flex flex-col gap-3">
+        <section v-if="dataBCUVersion.length">
+          <el-row :gutter="10" class="gap-y-2.5">
+            <re-col
+              v-for="(item, index) in dataBCUVersion"
+              :key="`s-${item.data_name ?? index}`"
+              :value="3"
+            >
+              <div
+                class="h-full rounded-md border border-(--el-border-color-lighter) bg-(--el-bg-color) py-2 px-2.5 transition duration-200 hover:border-(--el-color-primary-light-5) hover:shadow-sm"
+              >
+                <div
+                  class="truncate text-xs text-(--el-text-color-secondary)"
+                  :title="item.data_name"
+                >
+                  {{ item.data_name }}
+                </div>
+                <div class="mt-0.5 flex items-baseline gap-1">
+                  <span
+                    class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+                  >
+                    {{ item.data_parsed }}
+                  </span>
+                  <span
+                    v-if="item.data_unit"
+                    class="text-xs text-(--el-text-color-secondary)"
+                  >
+                    {{ item.data_unit }}
+                  </span>
+                </div>
+              </div>
+            </re-col>
+          </el-row>
+        </section>
+
+        <section v-if="dataBMUVersion.length" class="flex flex-col gap-3">
+          <div
+            v-for="(item, i) in dataBMUVersion"
+            :key="`bmu-${item.data_name ?? i}`"
           >
-            <div class="metric">
-              <div class="metric__name" :title="item.data_name">
-                {{ item.data_name }}
-              </div>
-              <div class="metric__value">
-                <span class="metric__num">{{ item.data_parsed }}</span>
-                <span v-if="item.data_unit" class="metric__unit">
-                  {{ item.data_unit }}
-                </span>
-              </div>
-            </div>
-          </re-col>
-        </el-row>
-      </section>
+            <el-row :gutter="10" class="gap-y-2.5">
+              <re-col
+                v-for="(bit, bidx) in item.data_parsed || []"
+                :key="`bit-${item.data_name}-${bit.reg_idx ?? bidx}`"
+                :value="6"
+              >
+                <div
+                  class="h-full rounded-md border border-(--el-border-color-lighter) bg-(--el-bg-color) py-2 px-2.5 transition duration-200 hover:border-(--el-color-primary-light-5) hover:shadow-sm"
+                >
+                  <div
+                    class="truncate text-xs text-(--el-text-color-secondary)"
+                    :title="bit.bit_name"
+                  >
+                    {{ bit.bit_name }}
+                  </div>
+                  <div class="mt-0.5 flex items-baseline gap-1">
+                    <span
+                      class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+                    >
+                      {{ bit.bit_value }}
+                    </span>
+                  </div>
+                </div>
+              </re-col>
+            </el-row>
+          </div>
+        </section>
+      </div>
     </template>
   </el-card>
 </template>
@@ -40,97 +87,5 @@ defineOptions({
   name: "Page2"
 });
 
-const { dataVersion } = useCol();
+const { dataBCUVersion, dataBMUVersion } = useCol();
 </script>
-
-<style lang="scss" scoped>
-.cluster-page {
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-
-    .bar {
-      width: 3px;
-      height: 14px;
-      margin-right: 6px;
-      background: var(--el-color-primary);
-      border-radius: 2px;
-    }
-  }
-
-  &__section {
-    & + & {
-      margin-top: 12px;
-    }
-  }
-
-  &__section-title {
-    margin: 0 0 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--el-text-color-regular);
-  }
-}
-
-/* el-row 的 gutter 只作用于水平方向，多行时需用 row-gap 补垂直间距 */
-.card-row {
-  row-gap: 2px;
-}
-
-.metric,
-.bitcard {
-  height: 100%;
-  padding: 8px 10px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-
-  &:hover {
-    border-color: var(--el-color-primary-light-5);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
-  }
-}
-
-.metric {
-  &__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    white-space: nowrap;
-  }
-
-  &__value {
-    display: flex;
-    gap: 3px;
-    align-items: baseline;
-    margin-top: 2px;
-  }
-
-  &__num {
-    font-size: 14px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.25;
-    color: var(--el-text-color-primary);
-  }
-
-  &__unit {
-    font-size: 11px;
-    color: var(--el-text-color-secondary);
-  }
-}
-</style>

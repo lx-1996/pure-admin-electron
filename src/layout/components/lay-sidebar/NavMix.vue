@@ -12,7 +12,8 @@ import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vu
 
 import LogoutCircleRLine from "~icons/ri/logout-circle-r-line";
 import Setting from "~icons/ri/settings-3-line";
-
+import SetIps from "../lay-ips/setIp.vue";
+import SelectIp from "../lay-ips/selectIp.vue";
 const menuRef = ref();
 const defaultActive = ref(null);
 
@@ -93,11 +94,13 @@ watch(
     </el-menu>
     <div class="horizontal-header-right">
       <!-- 菜单搜索 -->
-      <LaySearch id="header-search" />
+      <!-- <LaySearch id="header-search" /> -->
       <!-- 全屏 -->
-      <LaySidebarFullScreen id="full-screen" />
+      <!-- <LaySidebarFullScreen id="full-screen" /> -->
       <!-- 消息通知 -->
-      <LayNotice id="header-notice" />
+      <!-- <LayNotice id="header-notice" /> -->
+      <SelectIp id="header-selectIp" />
+      <SetIps id="header-setIps" />
       <!-- 退出登录 -->
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover select-none">

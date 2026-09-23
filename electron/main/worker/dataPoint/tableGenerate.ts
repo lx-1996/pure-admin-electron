@@ -45,7 +45,8 @@ const ADDR_NUM_MAP_WITHOUT_RES = {
   /** 系统汇总类 */
   system_summary: 128,
   cluster_summary: 125,
-  pack_summary: 614
+  pack_summary: 614,
+  power_off_data: 20
 } as const;
 // ---------- 共享常量列方法 ----------
 
@@ -172,6 +173,12 @@ const SHARE = {
       data_word_length: length
     }));
   },
+  hex(num: number): DataTypeConfig[] {
+    return Array.from({ length: num }, () => ({
+      data_type: "hex",
+      data_word_length: 1
+    }));
+  },
   /** 0 常量列 */
   zero: (n: number): number[] => column(0, n),
   /** 0.001 分辨率常量列 */
@@ -193,9 +200,9 @@ const SHARE = {
   unit_kWh: (n: number): UNITTYPE[] => column("kWh", n),
   unit_Ah: (n: number): UNITTYPE[] => column("Ah", n),
   unit_kB: (n: number): UNITTYPE[] => column("kB", n),
-  reserved: (n: number): string[] => column("预留", n),
-  backslash: (n: number): string[] => column("/", n),
-  empty: (n: number): string[] => column("", n),
+  reserved: (n: number): any[] => column("预留", n),
+  backslash: (n: number): any[] => column("/", n),
+  empty: (n: number): any[] => column("", n),
   max_65535: (n: number): number[] => column(65535, n),
   null: (n: number): null[] => column(null, n)
 };
@@ -255,7 +262,8 @@ const params_data_type = {
     ...SHARE.uint16(2),
     ...SHARE.int16(2),
     ...SHARE.bitfield(1, 1),
-    ...SHARE.uint16(4),
+    ...SHARE.hex(2),
+    ...SHARE.uint16(2),
     ...SHARE.bitfield(1, 1),
     ...SHARE.uint32(3),
     ...SHARE.uint16(4),
@@ -274,7 +282,8 @@ const params_data_type = {
     ...SHARE.bitfield(128, 1),
     ...SHARE.bitfield(2, 1)
     //...SHARE.uint16(154)
-  ]
+  ],
+  power_off_data: [...SHARE.uint16(1), ...SHARE.uint32(5), ...SHARE.uint16(9)]
 };
 /** system_summary 数据类型列：长度 144，各段定义按协议（字段无规律） */
 const params_irregular_props: Record<string, Irregular_props> = {
@@ -365,7 +374,11 @@ const params_irregular_props: Record<string, Irregular_props> = {
       // ...SHARE.max_65535(16)
     ],
     data_res: [
-      ...SHARE.res_1(16),
+      ...Array.from({ length: 16 }, (_, index) => {
+        if (index % 2 == 0 && index <= 11) return 0.001;
+        if (index == 12 || index == 13) return 0.001;
+        else return 1;
+      }),
       ...Array.from({ length: 16 }, (_, index) => {
         if (index % 2 == 0 && index <= 11) return 0.1;
         if (index == 12 || index == 13) return 0.1;
@@ -1027,7 +1040,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           return {
             reg_idx: index * 7,
             reg_length: 7,
-            bit_name: `BMU${index + 1}`,
+            bit_name: `BMU${index + 1}产品编码`,
             bit_value_type: "reg_value_hex"
           };
         })
@@ -1095,6 +1108,34 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...SHARE.empty(1)
       /*    ...SHARE.empty(155) */
     ] as UNITTYPE[]
+  },
+  power_off_data: {
+    data_name: [
+      "充电效率",
+      "可用电量",
+      "累计充电电量",
+      "累计放电电量",
+      "累计充电容量",
+      "累计放电容量",
+      ...SHARE.reserved(3),
+      "故障保护次数",
+      "电压越限次数",
+      "温度越限次数",
+      ...SHARE.reserved(3)
+    ],
+    data_type: params_data_type.power_off_data.map(item => item.data_type),
+    data_word_length: params_data_type.power_off_data.map(
+      item => item.data_word_length
+    ),
+    data_bit_config: SHARE.null(15),
+    data_res: [...SHARE.res_0_01(2), ...SHARE.res_1(13)],
+    data_offset: SHARE.zero(15),
+    data_unit: [
+      ...SHARE.unit_pct(1),
+      ...SHARE.unit_kWh(3),
+      ...SHARE.unit_Ah(2),
+      ...SHARE.empty(9)
+    ]
   }
 };
 
@@ -1177,6 +1218,19 @@ const params_propMap: Record<ClassType, PointTable> = {
     data_word_length: params_irregular_props.pack_summary.data_word_length,
     data_bit_config: params_irregular_props.pack_summary.data_bit_config,
     data_unit: params_irregular_props.pack_summary.data_unit
+  },
+  power_off_data: {
+    data_name: params_irregular_props.power_off_data.data_name,
+    data_type: params_irregular_props.power_off_data.data_type,
+    data_res: params_irregular_props.power_off_data.data_res,
+    data_offset: params_irregular_props.power_off_data.data_offset,
+    data_word_length: params_irregular_props.power_off_data.data_word_length,
+    data_bit_config: params_irregular_props.power_off_data.data_bit_config,
+    data_unit: params_irregular_props.power_off_data.data_unit,
+    data_isHiden: params_irregular_props.power_off_data.data_name.map(item => {
+      const hidenParamsName = ["预留"];
+      return hidenParamsName.includes(item);
+    })
   },
   pcs_data: {
     data_name: names("pcs_param", ADDR_NUM_MAP.pcs_data)
@@ -1282,6 +1336,14 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     addr_start: 0x4200,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.pack_summary,
     data_props: params_propMap.pack_summary
+  },
+  power_off_data: {
+    class: "power_off_data",
+    parmLevel: "cluster",
+    isSharedProps: false,
+    addr_start: 0x5200,
+    addr_num: ADDR_NUM_MAP_WITHOUT_RES.power_off_data,
+    data_props: params_propMap.power_off_data
   },
   pcs_data: {
     class: "pcs_data",

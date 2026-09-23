@@ -1,12 +1,12 @@
 /* $sideBarWidth: vertical 模式下主体内容距离网页文档左侧的距离 */
 @mixin merge-style($sideBarWidth) {
-  @media screen and (width >= 150px) and (width <= 420px) {
+  @media screen and (width >=150px) and (width <=420px) {
     .app-main-nofixed-header {
       overflow-y: hidden;
     }
   }
 
-  @media screen and (width >= 420px) {
+  @media screen and (width >=420px) {
     .app-main-nofixed-header {
       overflow: hidden;
     }
@@ -441,6 +441,7 @@
 
     .horizontal-header-right {
       display: flex;
+      gap: 5px;
       align-items: center;
       justify-content: flex-end;
       min-width: 340px;

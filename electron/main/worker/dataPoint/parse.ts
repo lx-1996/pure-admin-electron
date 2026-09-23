@@ -186,6 +186,8 @@ function judge_data_type(
     return "isASCII";
   } else if (data_type == "bitfield" && data_bit_config?.length) {
     return "isBitfield";
+  } else if (data_type == "hex") {
+    return "isHEX";
   }
   // 其余类型（hex/float/未配置 data_type 等）返回 undefined，
   // 由 parse_raw_data 的 default 分支原样返回 data_value
@@ -220,6 +222,10 @@ function parse_raw_data(build_data: table.Build_data[]) {
       }
       case "isASCII": {
         const data_parsed = parse_ascii(data_value);
+        return { ...rest, data_parsed };
+      }
+      case "isHEX": {
+        const data_parsed = data_value.toString(16).padStart(4, "0");
         return { ...rest, data_parsed };
       }
       case "isBitfield": {
