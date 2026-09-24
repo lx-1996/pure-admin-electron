@@ -32,14 +32,14 @@ export function useCol() {
   useIpcListener("pack_summary", onpackSummaryData);
   /** 过滤隐藏项：基于所选 ip 的数据 */
   const dataBCUVersion = computed(() => [
+    ...dataBCUVersionSelectedIp.value.slice(-9),
     ...dataBCUVersionSelectedIp.value.filter(item =>
       [
-        //"CAN霍尔传感器状态信息",
+        "CAN霍尔传感器状态信息",
         "CAN霍尔传感器名称",
         "CAN霍尔传感器软件版本"
       ].includes(item.data_name)
-    ),
-    ...dataBCUVersionSelectedIp.value.slice(-9)
+    )
   ]);
   const bmuVersionName = ["BMU版本号", "BMU产品编码"];
   const dataBMUVersion = computed(() =>

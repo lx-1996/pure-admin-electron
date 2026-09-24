@@ -39,14 +39,18 @@ const ADDR_NUM_MAP = {
   pcs_data: 125,
   cooler_data: 125,
   dehumidifier_data: 125,
-  firefighting_data: 125
+  firefighting_data: 125,
+  dido: 9,
+  statusInfo: 32
 } as const;
 const ADDR_NUM_MAP_WITHOUT_RES = {
   /** 系统汇总类 */
   system_summary: 128,
   cluster_summary: 125,
   pack_summary: 614,
-  power_off_data: 20
+  power_off_data: 20,
+  dido: 8,
+  statusInfo: 22
 } as const;
 // ---------- 共享常量列方法 ----------
 
@@ -161,10 +165,10 @@ const SHARE = {
       data_word_length: 2
     }));
   },
-  bitfield(length: number, num: number): DataTypeConfig[] {
+  bitfield(data_word_length: number, num: number): DataTypeConfig[] {
     return Array.from({ length: num }, () => ({
       data_type: "bitfield",
-      data_word_length: length
+      data_word_length
     }));
   },
   ascii(length: number, num: number): DataTypeConfig[] {
@@ -283,10 +287,11 @@ const params_data_type = {
     ...SHARE.bitfield(2, 1)
     //...SHARE.uint16(154)
   ],
-  power_off_data: [...SHARE.uint16(1), ...SHARE.uint32(5), ...SHARE.uint16(9)]
+  power_off_data: [...SHARE.uint16(1), ...SHARE.uint32(5), ...SHARE.uint16(9)],
+  dido: [...SHARE.bitfield(1, 2), ...SHARE.bitfield(2, 3)]
 };
 /** system_summary 数据类型列：长度 144，各段定义按协议（字段无规律） */
-const params_irregular_props: Record<string, Irregular_props> = {
+const params_props: Record<string, Irregular_props> = {
   system_summary: {
     data_name: [
       ...SHARE.names_system_summary("单体电压"),
@@ -878,6 +883,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           reg_idx: 0,
           bit_offset: 0,
           bit_length: 1,
+          bit_name: "故障指示",
           bit_value_type: "bit_mapping",
           display_mode: "mappingValue",
           bit_mapping: {
@@ -891,6 +897,7 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_length: 7,
           bit_value_type: "bit_mapping",
           display_mode: "mappingValue",
+          bit_name: "故障信息",
           bit_mapping: {
             1: "存储错误",
             2: "过流检测",
@@ -971,16 +978,16 @@ const params_irregular_props: Record<string, Irregular_props> = {
       Array.from({ length: 32 }, (_, idex): BitConfig[] => {
         return [
           {
-            reg_idx: idex,
+            reg_idx: 0,
             bit_offset: 0,
-            bit_length: 8,
+            bit_length: 1,
             bit_name: `BMU${idex + 1}断联位置-正向`,
             bit_value_type: "bit_value"
           },
           {
-            reg_idx: idex,
+            reg_idx: 1,
             bit_offset: 8,
-            bit_length: 8,
+            bit_length: 1,
             bit_name: `BMU${idex + 1}断联位置-反向`,
             bit_value_type: "bit_value"
           }
@@ -1035,16 +1042,14 @@ const params_irregular_props: Record<string, Irregular_props> = {
           bit_value_type: "reg_value"
         };
       }),
-      [
-        ...Array.from({ length: 32 }, (_, index): BitConfig => {
-          return {
-            reg_idx: index * 7,
-            reg_length: 7,
-            bit_name: `BMU${index + 1}产品编码`,
-            bit_value_type: "reg_value_hex"
-          };
-        })
-      ],
+      Array.from({ length: 32 }, (_, index): BitConfig => {
+        return {
+          reg_idx: index * 7,
+          reg_length: 7,
+          bit_name: `BMU${index + 1}产品编码`,
+          bit_value_type: "reg_value_hex"
+        };
+      }),
       Array.from({ length: 128 }, (_, index) => {
         return {
           reg_idx: index,
@@ -1136,6 +1141,91 @@ const params_irregular_props: Record<string, Irregular_props> = {
       ...SHARE.unit_Ah(2),
       ...SHARE.empty(9)
     ]
+  },
+  dido: {
+    data_name: [
+      "系统DI输入状态",
+      "系统DO驱动状态",
+      "BMU-DI1输入状态",
+      "BMU-DI2输入状态",
+      "BMU-DI3输入状态"
+    ],
+    data_type: params_data_type.dido.map(item => item.data_type),
+    data_word_length: params_data_type.dido.map(item => item.data_word_length),
+    data_bit_config: [
+      Array.from({ length: 11 }, (_, index) => {
+        return {
+          reg_idx: 0,
+          bit_offset: index,
+          bit_length: 1,
+          bit_name: `DI${index + 1}`,
+          bit_value_type: "bit_value"
+        };
+      }),
+      Array.from({ length: 9 }, (_, index) => {
+        return {
+          reg_idx: 0,
+          bit_offset: index,
+          bit_length: 1,
+          bit_name: `DO${index + 1}`,
+          bit_value_type: "bit_value"
+        };
+      }),
+      Array.from({ length: 32 }, (_, index) => {
+        if (index >= 0 && index <= 15) {
+          return {
+            reg_idx: 0,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI1`,
+            bit_value_type: "bit_value"
+          };
+        } else
+          return {
+            reg_idx: 1,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI1`,
+            bit_value_type: "bit_value"
+          };
+      }),
+      Array.from({ length: 32 }, (_, index) => {
+        if (index >= 0 && index <= 15) {
+          return {
+            reg_idx: 0,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI2`,
+            bit_value_type: "bit_value"
+          };
+        } else
+          return {
+            reg_idx: 1,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI2`,
+            bit_value_type: "bit_value"
+          };
+      }),
+      Array.from({ length: 32 }, (_, index) => {
+        if (index >= 0 && index <= 15) {
+          return {
+            reg_idx: 0,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI3`,
+            bit_value_type: "bit_value"
+          };
+        } else
+          return {
+            reg_idx: 1,
+            bit_offset: index,
+            bit_length: 1,
+            bit_name: `BMU${index + 1}-DI3`,
+            bit_value_type: "bit_value"
+          };
+      })
+    ]
   }
 };
 
@@ -1159,29 +1249,29 @@ const params_propMap: Record<ClassType, PointTable> = {
   system_summary: {
     // data_name 待补充
     //id: seq(ADDR_NUM_MAP.system_summary),
-    data_name: params_irregular_props.system_summary.data_name,
-    data_type: params_irregular_props.system_summary.data_type,
-    data_min: params_irregular_props.system_summary.data_min,
-    data_max: params_irregular_props.system_summary.data_max,
-    data_res: params_irregular_props.system_summary.data_res,
+    data_name: params_props.system_summary.data_name,
+    data_type: params_props.system_summary.data_type,
+    data_min: params_props.system_summary.data_min,
+    data_max: params_props.system_summary.data_max,
+    data_res: params_props.system_summary.data_res,
     data_offset: SHARE.zero(ADDR_NUM_MAP_WITHOUT_RES.system_summary),
-    data_unit: params_irregular_props.system_summary.data_unit,
-    data_word_length: params_irregular_props.system_summary.data_word_length,
-    data_isHiden: params_irregular_props.system_summary.data_name.map(item => {
+    data_unit: params_props.system_summary.data_unit,
+    data_word_length: params_props.system_summary.data_word_length,
+    data_isHiden: params_props.system_summary.data_name.map(item => {
       const hidenParamsName = ["预留"];
       return hidenParamsName.includes(item);
     }),
-    data_class: params_irregular_props.system_summary.data_class
+    data_class: params_props.system_summary.data_class
   },
   cluster_summary: {
-    data_name: params_irregular_props.cluster_summary.data_name,
-    data_type: params_irregular_props.cluster_summary.data_type,
-    data_res: params_irregular_props.cluster_summary.data_res,
-    data_offset: params_irregular_props.cluster_summary.data_offset,
-    data_word_length: params_irregular_props.cluster_summary.data_word_length,
-    data_bit_config: params_irregular_props.cluster_summary.data_bit_config,
-    data_unit: params_irregular_props.cluster_summary.data_unit,
-    data_isHiden: params_irregular_props.cluster_summary.data_name.map(item => {
+    data_name: params_props.cluster_summary.data_name,
+    data_type: params_props.cluster_summary.data_type,
+    data_res: params_props.cluster_summary.data_res,
+    data_offset: params_props.cluster_summary.data_offset,
+    data_word_length: params_props.cluster_summary.data_word_length,
+    data_bit_config: params_props.cluster_summary.data_bit_config,
+    data_unit: params_props.cluster_summary.data_unit,
+    data_isHiden: params_props.cluster_summary.data_name.map(item => {
       const hidenParamsName = [
         "充电SOP有效校验标识",
         "充电SOP-MAP表坐标列",
@@ -1211,23 +1301,23 @@ const params_propMap: Record<ClassType, PointTable> = {
     })
   },
   pack_summary: {
-    data_name: params_irregular_props.pack_summary.data_name,
-    data_type: params_irregular_props.pack_summary.data_type,
-    data_res: params_irregular_props.pack_summary.data_res,
-    data_offset: params_irregular_props.pack_summary.data_offset,
-    data_word_length: params_irregular_props.pack_summary.data_word_length,
-    data_bit_config: params_irregular_props.pack_summary.data_bit_config,
-    data_unit: params_irregular_props.pack_summary.data_unit
+    data_name: params_props.pack_summary.data_name,
+    data_type: params_props.pack_summary.data_type,
+    data_res: params_props.pack_summary.data_res,
+    data_offset: params_props.pack_summary.data_offset,
+    data_word_length: params_props.pack_summary.data_word_length,
+    data_bit_config: params_props.pack_summary.data_bit_config,
+    data_unit: params_props.pack_summary.data_unit
   },
   power_off_data: {
-    data_name: params_irregular_props.power_off_data.data_name,
-    data_type: params_irregular_props.power_off_data.data_type,
-    data_res: params_irregular_props.power_off_data.data_res,
-    data_offset: params_irregular_props.power_off_data.data_offset,
-    data_word_length: params_irregular_props.power_off_data.data_word_length,
-    data_bit_config: params_irregular_props.power_off_data.data_bit_config,
-    data_unit: params_irregular_props.power_off_data.data_unit,
-    data_isHiden: params_irregular_props.power_off_data.data_name.map(item => {
+    data_name: params_props.power_off_data.data_name,
+    data_type: params_props.power_off_data.data_type,
+    data_res: params_props.power_off_data.data_res,
+    data_offset: params_props.power_off_data.data_offset,
+    data_word_length: params_props.power_off_data.data_word_length,
+    data_bit_config: params_props.power_off_data.data_bit_config,
+    data_unit: params_props.power_off_data.data_unit,
+    data_isHiden: params_props.power_off_data.data_name.map(item => {
       const hidenParamsName = ["预留"];
       return hidenParamsName.includes(item);
     })
@@ -1243,6 +1333,12 @@ const params_propMap: Record<ClassType, PointTable> = {
   },
   firefighting_data: {
     data_name: names("firefighting_param", ADDR_NUM_MAP.firefighting_data)
+  },
+  dido: {
+    data_name: params_props.dido.data_name,
+    data_type: params_props.dido.data_type,
+    data_word_length: params_props.dido.data_word_length,
+    data_bit_config: params_props.dido.data_bit_config
   }
 };
 
@@ -1252,6 +1348,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_vltg: {
     class: "cell_vltg",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: true,
     addr_start: 0x0000,
     addr_num: ADDR_NUM_MAP.cell,
@@ -1268,6 +1365,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_temp: {
     class: "cell_temp",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: true,
     addr_start: 0x1000,
     addr_num: ADDR_NUM_MAP.cell,
@@ -1284,6 +1382,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_soc: {
     class: "cell_soc",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: true,
     addr_start: 0x2000,
     addr_num: ADDR_NUM_MAP.cell,
@@ -1299,6 +1398,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cell_soh: {
     class: "cell_soh",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: true,
     addr_start: 0x3000,
     addr_num: ADDR_NUM_MAP.cell,
@@ -1314,6 +1414,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   system_summary: {
     class: "system_summary",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
     addr_start: 0x4000,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.system_summary,
@@ -1323,6 +1424,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cluster_summary: {
     class: "cluster_summary",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
     addr_start: 0x4100,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.cluster_summary,
@@ -1332,6 +1434,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   pack_summary: {
     class: "pack_summary",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
     addr_start: 0x4200,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.pack_summary,
@@ -1340,6 +1443,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   power_off_data: {
     class: "power_off_data",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
     addr_start: 0x5200,
     addr_num: ADDR_NUM_MAP_WITHOUT_RES.power_off_data,
@@ -1348,6 +1452,7 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   pcs_data: {
     class: "pcs_data",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
     addr_start: 0x4500,
     addr_num: ADDR_NUM_MAP.pcs_data,
@@ -1362,8 +1467,9 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   cooler_data: {
     class: "cooler_data",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
-    addr_start: 0x4500,
+    addr_start: 0x4580,
     addr_num: ADDR_NUM_MAP.cooler_data,
     data_type: "uint16",
     data_min: 0,
@@ -1376,8 +1482,9 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   dehumidifier_data: {
     class: "dehumidifier_data",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
-    addr_start: 0x4500,
+    addr_start: 0x4600,
     addr_num: ADDR_NUM_MAP.dehumidifier_data,
     data_type: "uint16",
     data_min: 0,
@@ -1390,8 +1497,9 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
   firefighting_data: {
     class: "firefighting_data",
     parmLevel: "cluster",
+    functionCode: "04",
     isSharedProps: false,
-    addr_start: 0x4500,
+    addr_start: 0x4680,
     addr_num: ADDR_NUM_MAP.firefighting_data,
     data_type: "uint16",
     data_min: 0,
@@ -1400,6 +1508,15 @@ const classes_fieldsMap: Record<ClassType, ClassTable> = {
     data_offset: 0,
     data_unit: "/",
     data_props: params_propMap.firefighting_data
+  },
+  dido: {
+    class: "dido",
+    parmLevel: "cluster",
+    functionCode: "04",
+    isSharedProps: false,
+    addr_start: 0xa000,
+    addr_num: ADDR_NUM_MAP_WITHOUT_RES.dido,
+    data_props: params_propMap.dido
   }
 };
 

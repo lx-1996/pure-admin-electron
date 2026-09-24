@@ -21,7 +21,8 @@ export type ClassType =
   | "pcs_data"
   | "cooler_data"
   | "dehumidifier_data"
-  | "firefighting_data";
+  | "firefighting_data"
+  | "dido";
 /** 寄存器数据类型 */
 export type DataType =
   | "uint16"
@@ -57,6 +58,7 @@ export type BIT_VALUE_TYPE =
   | "reg_mapping"
   | "reg_value_hex"
   | "reg_value_ascii";
+export type FUNCTION_CODE = "04" | "03";
 export interface BitConfig {
   reg_idx: number;
   reg_length?: number;
@@ -95,6 +97,7 @@ export interface ClassTable {
   parmLevel: "cluster" | "stack";
   /** data_type/data_min/data_max/data_res/data_offset/data_unit 是否为类级共用的单一值（true，无需每个参数独立配置）；false 表示这些字段在 data_props 中按参数独立配置 */
   isSharedProps: boolean;
+  functionCode: FUNCTION_CODE;
   addr_start: number;
   addr_num: number;
   data_invalid_value?: string;

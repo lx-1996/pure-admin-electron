@@ -1,7 +1,7 @@
 <template>
   <el-card>
     <el-empty
-      v-if="!dataBCUVersion.length"
+      v-if="!dataBCUVersion.length || !dataBMUVersion.length"
       description="等待下位机数据…"
       :image-size="80"
     />
@@ -13,9 +13,34 @@
             <re-col
               v-for="(item, index) in dataBCUVersion"
               :key="`s-${item.data_name ?? index}`"
-              :value="3"
+              :value="4"
             >
               <div
+                v-if="item.data_name === 'CAN霍尔传感器状态信息'"
+                class="h-full rounded-md border border-(--el-border-color-lighter) bg-(--el-bg-color) py-2 px-2.5 transition duration-200 hover:border-(--el-color-primary-light-5) hover:shadow-sm"
+              >
+                <div
+                  class="mb-1 truncate text-xs text-(--el-text-color-secondary)"
+                >
+                  {{ item.data_name }}
+                </div>
+                <div class="mt-0.5 flex items-baseline gap-1">
+                  <span
+                    v-if="item.data_parsed[0].bit_raw == 0"
+                    class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+                  >
+                    {{ item.data_parsed[0].bit_value }}
+                  </span>
+                  <span
+                    v-else
+                    class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+                  >
+                    {{ item.data_parsed[1].bit_value }}
+                  </span>
+                </div>
+              </div>
+              <div
+                v-else
                 class="h-full rounded-md border border-(--el-border-color-lighter) bg-(--el-bg-color) py-2 px-2.5 transition duration-200 hover:border-(--el-color-primary-light-5) hover:shadow-sm"
               >
                 <div
@@ -29,12 +54,6 @@
                     class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
                   >
                     {{ item.data_parsed }}
-                  </span>
-                  <span
-                    v-if="item.data_unit"
-                    class="text-xs text-(--el-text-color-secondary)"
-                  >
-                    {{ item.data_unit }}
                   </span>
                 </div>
               </div>
@@ -64,7 +83,7 @@
                   </div>
                   <div class="mt-0.5 flex items-baseline gap-1">
                     <span
-                      class="text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
+                      class="truncate text-sm font-semibold tabular-nums leading-tight text-(--el-text-color-primary)"
                     >
                       {{ bit.bit_value }}
                     </span>

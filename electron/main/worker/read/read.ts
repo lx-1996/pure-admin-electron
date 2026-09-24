@@ -1,6 +1,6 @@
 ﻿import type { ModbusTCPClient } from "../client/clientClass";
 import { classes_fieldsMap, build_data } from "../dataPoint/tableGenerate";
-import type { ClassType } from "../types/dataPoint";
+import type { ClassType, FUNCTION_CODE } from "../types/dataPoint";
 import type { WorkerDataMessage } from "../types/worker";
 import {
   parse_raw_data,
@@ -21,16 +21,17 @@ async function repeatRead(
   client: ModbusTCPClient,
   add_start: number,
   add_num_total: number,
-  isInput: boolean
+  functionCode: FUNCTION_CODE
 ) {
   let remain_num = add_num_total;
   let remain_start = add_start;
   const res = [];
   while (remain_num > 0) {
     const addNum_read = Math.min(remain_num, READ_PARAMS.MAX_READ_NUM);
-    const res_temp = isInput
-      ? await client.client.readInputRegisters(remain_start, addNum_read)
-      : await client.client.readHoldingRegisters(remain_start, addNum_read);
+    const res_temp =
+      functionCode === "04"
+        ? await client.client.readInputRegisters(remain_start, addNum_read)
+        : await client.client.readHoldingRegisters(remain_start, addNum_read);
     res.push(...res_temp.data);
     remain_num -= READ_PARAMS.MAX_READ_NUM;
     remain_start = remain_start + READ_PARAMS.MAX_READ_NUM;
@@ -40,8 +41,7 @@ async function repeatRead(
 export async function readData(
   client: ModbusTCPClient,
   data_class: ClassType,
-  bmu_config?: ThisClientBMUConfigData,
-  isInput: boolean = true
+  bmu_config?: ThisClientBMUConfigData
 ) {
   const filedsMap = classes_fieldsMap[data_class];
   let addr_num;
@@ -54,7 +54,7 @@ export async function readData(
       client,
       filedsMap.addr_start,
       addr_num,
-      isInput
+      filedsMap.functionCode
     );
     const data_build = build_data(read_data, filedsMap);
     const data_parsed = parse_raw_data(data_build);
@@ -62,8 +62,6 @@ export async function readData(
       const isTemp = data_class === "cell_temp";
       const cellData = getCellData(bmu_config, data_parsed, isTemp);
       //writeLog("index", parsedData);
-      //console.log("afeIndex", idxRes.afeIndex);
-      // console.log("sensorIndexInAFE", idxRes.sensorIndexInAFE);
       const message: WorkerDataMessage = {
         type: "data",
         class: data_class,
@@ -81,9 +79,6 @@ export async function readData(
       };
       process.send?.(message);
     }
-    // else if (data_class === "system_summary") {
-    //   const sysData = getSysData(data_parsed);
-    // }
     // writeLog(data_class, data_parsed);
     else {
       const message: WorkerDataMessage = {

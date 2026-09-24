@@ -82,6 +82,7 @@ async function start(modbusTCPClient: ModbusTCPClient) {
       await readData(modbusTCPClient, "cluster_summary");
       await readData(modbusTCPClient, "pack_summary", bmuConfig);
       await readData(modbusTCPClient, "power_off_data");
+      await readData(modbusTCPClient, "dido");
       // await readData(modbusTCPClient, "pcs_data");
       // await readData(modbusTCPClient, "cooler_data");
       // await readData(modbusTCPClient, "dehumidifier_data");

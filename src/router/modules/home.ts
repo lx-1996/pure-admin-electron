@@ -8,7 +8,7 @@ export default {
   redirect: "/page1",
   meta: {
     icon: "ep/home-filled",
-    title: "首页",
+    title: "运行信息",
     rank: 0
   },
   children: [
@@ -27,6 +27,14 @@ export default {
       component: () => import("@/views/bcu/version/index.vue"),
       meta: {
         title: "版本号"
+      }
+    },
+    {
+      path: "/page3",
+      name: "Page3",
+      component: () => import("@/views/bcu/dido/index.vue"),
+      meta: {
+        title: "DIDO"
       }
     }
   ]

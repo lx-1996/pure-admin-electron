@@ -120,6 +120,22 @@ async function connectAllInputIps(formEl: FormInstance | undefined) {
       message(`失败：${res.error}`, { type: "error" });
       return;
     }
+    // 把本次请求的 ip 同步进 store：后台该 ip 可能早已连上（如页面刷新后重加），
+    // 此时 worker 会跳过重建、不再下发 bcuConnStatus 事件；若只依赖事件来填 store，
+    // 连接管理表格与数据页会一直空白。这里用回包里的真实状态直接落库。
+    const statusByHost = new Map((res.data ?? []).map(d => [d.host, d.status]));
+    for (const item of payload) {
+      bcuConnectStore.addServer({
+        ...item,
+        reconnectTimes: 0,
+        heartBeat: 0,
+        status: statusByHost.get(item.host) ?? "connecting"
+      });
+    }
+    // 刷新后重加时 selectIp 已被清空，顺手选中本次第一个 ip，让数据页直接有内容
+    if (!bcuConnectStore.selectIp && payload.length > 0) {
+      bcuConnectStore.selectIp = payload[0].host;
+    }
     // worker 回传每个服务器的即时状态，据此提示成功/连接中/失败的 ip
     notifyConnectResult(res.data);
   } catch (e) {
